@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-#You should be editing ONLY the paths in lines 33-37! 
+#You should be editing ONLY the paths in lines 36-40! 
 
-TEMP=`getopt -q -o hS:R:L: --long help,Sample:,Right:,Ref:,Left:,Source: -n 'qpWave.sh' -- "$@"`
+TEMP=`getopt -q -o hS:R:L:D: --long help,Sample:,Right:,Ref:,Left:,Source:,SubDir: -n 'qpWrapper.sh' -- "$@"`
 eval set -- "$TEMP"
 
 function Helptext {
@@ -12,6 +12,7 @@ function Helptext {
 	echo -ne "-S, --Sample\t\tName of your sample. Can be provided multiple times.\n"
 	echo -ne "-R, --Ref, --Right\tThe Right populations for your runs. Can be provided multiple times.\n"
 	echo -ne "-L, --Left, --Source\tThe Left Pops of your runs. Your Sample will be the first Left pop, followed by these. Can be provided multiple times.\n"
+	echo -ne "-D, --SubDir\tWhen provided, results will be placed in a subdirectory with the name provided within the result directory. Deeper paths can be provided by using '/'.\n"
 }
 
 if [ $? -ne 0 ]
@@ -24,6 +25,7 @@ while true ; do
         -S|--Sample) SAMPLES+=("$2"); shift 2;;
         -R|--Ref|--Right) RIGHTS+=("$2") ; shift 2;;
         -L|--Left|--Source) LEFTS+=("$2"); shift 2;;
+        -D|--SubDir) SUBDIR="$2"; shift 2;;
         --) TYPE=$2 ;shift 2; break ;;
         -h|--help) Helptext; exit 0 ;;
 	*) echo -e "invalid option provided.\n"; Helptext; exit 1;;
@@ -31,22 +33,20 @@ while true ; do
 done
 
 # EDIT ONLY THIS PART
-INDIR=/projects1/AncientFinnish/PopGen.Thiseas/MergedPopgen.backup/calls
-OUTDIR=~/$TYPE
-GENO=$INDIR/HO.1240K.Finnish.NoTrans.merged.geno
-SNP=$INDIR/HO.1240K.Finnish.NoTrans.merged.snp
-IND=$INDIR/HO.1240K.Finnish.NoTrans.merged.ind
-mkdir -p $OUTDIR/Logs
-mkdir -p $OUTDIR/.tmp
+INDIR=/projects1/AncientFinnish/DataFreeze20_07_17/results/calls
+OUTDIR=/projects1/AncientFinnish/DataFreeze20_07_17/results #Subdirectories will be created within this directory to contain the results from the runs.
+GENO=$INDIR/Baltic.PublishedOnly.HO.1240K.Ancients+Saami.geno 
+SNP=$INDIR/Baltic.PublishedOnly.HO.1240K.Ancients+Saami.snp
+IND=$INDIR/Baltic.PublishedOnly.HO.1240K.Ancients+Saami.ind
 #DONT EDIT BELOW HERE
 
+OUTDIR2=$OUTDIR/$TYPE/$SUBDIR
+mkdir -p $OUTDIR2/Logs
+mkdir -p $OUTDIR2/.tmp
 
-declare -i COUNT=0
 for SAMPLE in "" ${SAMPLES[@]}; do
-	POPLEFT=$OUTDIR/.tmp/$TYPE.Left.$COUNT.txt
-	if [ -f $POPLEFT ]; then
-		POPLEFT=$OUTDIR/.tmp/$TYPE.Left.$COUNT.txt1
-	fi
+	TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
+	POPLEFT=$TEMPDIR/Left
 	if [ "$SAMPLE" != "" ]; then
 		printf "$SAMPLE\n" >$POPLEFT
 	else
@@ -56,16 +56,13 @@ for SAMPLE in "" ${SAMPLES[@]}; do
 		printf "$POP\n" >>$POPLEFT
 	done
 	
-	POPRIGHT=$OUTDIR/.tmp/$TYPE.Right.$COUNT.txt
-	if [ -f $POPRIGHT ]; then
-		POPRIGHT=$OUTDIR/.tmp/$TYPE.Right.$COUNT.txt1
-	fi
+	POPRIGHT=$TEMPDIR/Right
 	printf "" >$POPRIGHT
 	for REF in ${RIGHTS[@]}; do
 		printf "$REF\n" >>$POPRIGHT
 	done
 	
-	PARAMSFILE=$OUTDIR/.tmp/$TYPE.sh.params.$COUNT.txt
+	PARAMSFILE=$TEMPDIR/Params
 	printf "genotypename:\t$GENO\n" > $PARAMSFILE
 	printf "snpname:\t$SNP\n" >> $PARAMSFILE
 	printf "indivname:\t$IND\n" >> $PARAMSFILE
@@ -74,25 +71,21 @@ for SAMPLE in "" ${SAMPLES[@]}; do
 	printf "details:\tYES\n" >>$PARAMSFILE
 	
 	if [ "$SAMPLE" != "" ]; then
-		LOG=$OUTDIR/Logs/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.log
-		if [ -f $OUTDIR/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.out ]; then
-			OUT=$OUTDIR/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.out1
-		else
-			OUT=$OUTDIR/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.out
-		fi
+		LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.$(basename $TEMPDIR).log
+		OUT=$OUTDIR2/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.$(basename $TEMPDIR).out
 	else
-		LOG=$OUTDIR/Logs/$LEFTS.$RIGHTS.$TYPE.log
-		if [ -f $OUTDIR/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.out ]; then
-			OUT=$OUTDIR/$LEFTS.$RIGHTS.$TYPE.out1
-		else
-			OUT=$OUTDIR/$LEFTS.$RIGHTS.$TYPE.out
-		fi
+		LOG=$OUTDIR2/Logs/$LEFTS.$RIGHTS.$TYPE.$(basename $TEMPDIR).log
+		OUT=$OUTDIR2/$LEFTS.$RIGHTS.$TYPE.$(basename $TEMPDIR).out
 	fi
-	
-	if [ $SAMPLE == "" -a $TYPE == "qpAdm" ]; then
+	if [[ $SAMPLE == "" && $TYPE == "qpAdm" ]]; then
 		continue
 	fi
-	sbatch --job-name="${SAMPLE}_$TYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
-	COUNT+=1
+	# echo "OUT: $OUT"
+	# echo "LOG: $LOG"
+	# echo "LEFT: $POPLEFT"
+	# echo "RIGHT: $POPRIGHT"
+	# echo "PARAM: $PARAMSFILE"
+	# echo "${SAMPLE}_$TYPE"
+	sbatch --job-name="${SAMPLE}_${SUBDIR}_$TYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
 done
 

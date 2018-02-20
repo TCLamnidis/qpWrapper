@@ -2,7 +2,7 @@
 
 #You should be editing ONLY the paths in lines 36-40! 
 
-TEMP=`getopt -q -o ha:S:R:L:D: --long help,Sample:,Right:,Ref:,Left:,Source:,SubDir: -n 'qpWrapper.sh' -- "$@"`
+TEMP=`getopt -q -o haS:R:L:D: --long help,Sample:,Right:,Ref:,Left:,Source:,SubDir: -n 'qpWrapper.sh' -- "$@"`
 eval set -- "$TEMP"
 
 function Helptext {
@@ -35,11 +35,11 @@ while true ; do
 done
 
 # EDIT ONLY THIS PART
-INDIR=/projects1/AncientFinnish/DataFreeze20_07_17/results/calls
-OUTDIR=/projects1/AncientFinnish/DataFreeze20_07_17/results #Subdirectories will be created within this directory to contain the results from the runs.
-GENO=$INDIR/PublishedOnly.HO.1240K.Ancients+Saami.geno
-SNP=$INDIR/PublishedOnly.HO.1240K.Ancients+Saami.snp
-IND=$INDIR/PublishedOnly.HO.1240K.Ancients+Saami.indEach
+INDIR=/projects1/AncientFinnish/Revision/data
+OUTDIR=/projects1/AncientFinnish/Revision #Subdirectories will be created within this directory to contain the results from the runs.
+GENO=$INDIR/Mittnik.Saag.Jones.Data.geno
+SNP=$INDIR/Mittnik.Saag.Jones.Data.snp
+IND=$INDIR/Mittnik.Saag.Jones.Data.ind
 #DONT EDIT BELOW HERE
 
 OUTDIR2=$OUTDIR/$TYPE/$SUBDIR
@@ -71,18 +71,16 @@ for SAMPLE in "" ${SAMPLES[@]}; do
 	printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
 	printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
 	printf "details:\tYES\n" >>$PARAMSFILE
-	if [ $ALLSNPS="FALSE" ]; then
-	
-	else
+	if [ $ALLSNPS!="FALSE" ]; then
 		printf "allsnps:\tYES\n" >>$PARAMSFILE
 	fi
 	
 	if [ "$SAMPLE" != "" ]; then
-		LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.$(basename $TEMPDIR).log
-		OUT=$OUTDIR2/$SAMPLE.$LEFTS.$RIGHTS.$TYPE.$(basename $TEMPDIR).out
+		LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$TYPE.$(basename $TEMPDIR).log
+		OUT=$OUTDIR2/$SAMPLE.$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$TYPE.$(basename $TEMPDIR).out
 	else
-		LOG=$OUTDIR2/Logs/$LEFTS.$RIGHTS.$TYPE.$(basename $TEMPDIR).log
-		OUT=$OUTDIR2/$LEFTS.$RIGHTS.$TYPE.$(basename $TEMPDIR).out
+		LOG=$OUTDIR2/Logs/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$TYPE.$(basename $TEMPDIR).log
+		OUT=$OUTDIR2/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$TYPE.$(basename $TEMPDIR).out
 	fi
 	if [[ $SAMPLE == "" && $TYPE == "qpAdm" ]]; then
 		continue

@@ -34,6 +34,12 @@ while true ; do
     esac
 done
 
+if [ $ALLSNPS=="FALSE" ]; then
+	OUTTYPE=$TYPE+".NoAllSnps"
+else
+	OUTTYPE=$TYPE
+fi
+
 # EDIT ONLY THIS PART
 INDIR=/projects1/AncientFinnish/Revision/data
 OUTDIR=/projects1/AncientFinnish/Revision #Subdirectories will be created within this directory to contain the results from the runs.
@@ -46,9 +52,7 @@ OUTDIR2=$OUTDIR/$TYPE/$SUBDIR
 mkdir -p $OUTDIR2/Logs
 mkdir -p $OUTDIR2/.tmp
 
-if [ $ALLSNPS=="FALSE" ]; then
-	TYPE+=".NoAllSnps"
-fi
+
 
 for SAMPLE in "" ${SAMPLES[@]}; do
 	TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
@@ -80,11 +84,11 @@ for SAMPLE in "" ${SAMPLES[@]}; do
 	fi
 	
 	if [ "$SAMPLE" != "" ]; then
-		LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$TYPE.$(basename $TEMPDIR).log
-		OUT=$OUTDIR2/$SAMPLE.$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$TYPE.$(basename $TEMPDIR).out
+		LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
+		OUT=$OUTDIR2/$SAMPLE.$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
 	else
-		LOG=$OUTDIR2/Logs/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$TYPE.$(basename $TEMPDIR).log
-		OUT=$OUTDIR2/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$TYPE.$(basename $TEMPDIR).out
+		LOG=$OUTDIR2/Logs/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
+		OUT=$OUTDIR2/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
 	fi
 	if [[ $SAMPLE == "" && $TYPE == "qpAdm" ]]; then
 		continue
@@ -95,6 +99,6 @@ for SAMPLE in "" ${SAMPLES[@]}; do
 	# echo "RIGHT: $POPRIGHT"
 	# echo "PARAM: $PARAMSFILE"
 	# echo "${SAMPLE}_$TYPE"
-	sbatch --job-name="${SAMPLE}_${SUBDIR}_$TYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
+	sbatch --job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
 done
 

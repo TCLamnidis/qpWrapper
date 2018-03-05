@@ -34,7 +34,7 @@ while true ; do
     esac
 done
 
-if [ $ALLSNPS=="FALSE" ]; then
+if [ "$ALLSNPS" == "FALSE" ]; then
 	OUTTYPE=$TYPE+".NoAllSnps"
 else
 	OUTTYPE=$TYPE
@@ -45,7 +45,7 @@ INDIR=/projects1/AncientFinnish/Revision/data
 OUTDIR=/projects1/AncientFinnish/Revision #Subdirectories will be created within this directory to contain the results from the runs.
 GENO=$INDIR/Mittnik.Saag.Jones.Data.geno
 SNP=$INDIR/Mittnik.Saag.Jones.Data.snp
-IND=$INDIR/Mittnik.Saag.Jones.Data.Group.ind
+IND=$INDIR/Mittnik.Saag.Jones.Data.Lazaridis.ind
 #DONT EDIT BELOW HERE
 
 OUTDIR2=$OUTDIR/$TYPE/$SUBDIR

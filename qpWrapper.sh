@@ -39,12 +39,16 @@ INDIR=/projects1/AncientFinnish/Revision/data
 OUTDIR=/projects1/AncientFinnish/Revision #Subdirectories will be created within this directory to contain the results from the runs.
 GENO=$INDIR/Mittnik.Saag.Jones.Data.geno
 SNP=$INDIR/Mittnik.Saag.Jones.Data.snp
-IND=$INDIR/Mittnik.Saag.Jones.Data.ind
+IND=$INDIR/Mittnik.Saag.Jones.Data.Group.ind
 #DONT EDIT BELOW HERE
 
 OUTDIR2=$OUTDIR/$TYPE/$SUBDIR
 mkdir -p $OUTDIR2/Logs
 mkdir -p $OUTDIR2/.tmp
+
+if [ $ALLSNPS=="FALSE" ]; then
+	TYPE+=".NoAllSnps"
+fi
 
 for SAMPLE in "" ${SAMPLES[@]}; do
 	TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)

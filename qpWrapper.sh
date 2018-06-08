@@ -35,7 +35,7 @@ while true ; do
 done
 
 if [ "$ALLSNPS" == "FALSE" ]; then
-	OUTTYPE=$TYPE+".NoAllSnps"
+	OUTTYPE="$TYPE.NoAllSnps"
 else
 	OUTTYPE=$TYPE
 fi
@@ -43,16 +43,22 @@ fi
 # EDIT ONLY THIS PART
 INDIR=/projects1/AncientFinnish/Revision/data
 OUTDIR=/projects1/AncientFinnish/Revision #Subdirectories will be created within this directory to contain the results from the runs.
-GENO=$INDIR/Mittnik.Saag.Jones.Data.geno
-SNP=$INDIR/Mittnik.Saag.Jones.Data.snp
-IND=$INDIR/Mittnik.Saag.Jones.Data.Lazaridis.ind
+GENO=$INDIR/L35.Mittnik.Saag.Jones.Data.geno
+SNP=$INDIR/L35.Mittnik.Saag.Jones.Data.snp
+IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Group.ind
+# IND=$INDIR/L35.Mittnik.Saag.Jones.Data.ind
+# IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Each.AllSaami
 #DONT EDIT BELOW HERE
 
 OUTDIR2=$OUTDIR/$TYPE/$SUBDIR
 mkdir -p $OUTDIR2/Logs
 mkdir -p $OUTDIR2/.tmp
 
-
+if [[ $HOSTNAME == mpi* ]] ; then
+	SlurmPart="-p short "
+else
+	SlurmPart=""
+fi
 
 for SAMPLE in "" ${SAMPLES[@]}; do
 	TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
@@ -99,6 +105,6 @@ for SAMPLE in "" ${SAMPLES[@]}; do
 	# echo "RIGHT: $POPRIGHT"
 	# echo "PARAM: $PARAMSFILE"
 	# echo "${SAMPLE}_$TYPE"
-	sbatch --job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
+	sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
 done
 

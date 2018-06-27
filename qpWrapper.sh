@@ -60,7 +60,44 @@ else
 	SlurmPart=""
 fi
 
-for SAMPLE in "" ${SAMPLES[@]}; do
+if [[ $TYPE == "qpWave" ]]; then
+	unset SAMPLES
+	SAMPLES+=""
+	TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
+	POPLEFT=$TEMPDIR/Left
+	printf "" >$POPLEFT
+	for POP in ${LEFTS[@]}; do
+		printf "$POP\n" >>$POPLEFT
+	done
+	
+	POPRIGHT=$TEMPDIR/Right
+	printf "" >$POPRIGHT
+	for REF in ${RIGHTS[@]}; do
+		printf "$REF\n" >>$POPRIGHT
+	done
+	
+	PARAMSFILE=$TEMPDIR/Params
+	printf "genotypename:\t$GENO\n" > $PARAMSFILE
+	printf "snpname:\t$SNP\n" >> $PARAMSFILE
+	printf "indivname:\t$IND\n" >> $PARAMSFILE
+	printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
+	printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
+	printf "details:\tYES\n" >>$PARAMSFILE
+	if [ $ALLSNPS!="FALSE" ]; then
+		printf "allsnps:\tYES\n" >>$PARAMSFILE
+	fi
+	LOG=$OUTDIR2/Logs/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
+	OUT=$OUTDIR2/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
+	# echo "OUT: $OUT"
+	# echo "LOG: $LOG"
+	# echo "LEFT: $POPLEFT"
+	# echo "RIGHT: $POPRIGHT"
+	# echo "PARAM: $PARAMSFILE"
+	# echo "${SAMPLE}_$TYPE"
+	sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
+fi
+
+for SAMPLE in ${SAMPLES[@]}; do
 	TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
 	POPLEFT=$TEMPDIR/Left
 	if [ "$SAMPLE" != "" ]; then

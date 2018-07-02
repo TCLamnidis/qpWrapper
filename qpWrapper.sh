@@ -45,7 +45,8 @@ INDIR=/projects1/AncientFinnish/Revision/data
 OUTDIR=/projects1/AncientFinnish/Revision #Subdirectories will be created within this directory to contain the results from the runs.
 GENO=$INDIR/L35.Mittnik.Saag.Jones.Data.geno
 SNP=$INDIR/L35.Mittnik.Saag.Jones.Data.snp
-IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Group.ind
+# IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Group.ind
+IND=$INDIR/L35.Mittnik.Saag.Jones.Data.IceAgeClusters.ind
 # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.ind
 # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Each.AllSaami
 #DONT EDIT BELOW HERE

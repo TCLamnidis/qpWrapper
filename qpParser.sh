@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function join_by() { local IFS="$1"; shift; echo "$*"; }
-function repeatTab() { Length="$1"; let reps=4-${Length}; myString="$(printf "%${reps}s")"; echo ${myString// /"\t"}; }
+function repeatTab() { Length="$1"; let reps=6-${Length}; myString="$(printf "%${reps}s")"; echo ${myString// /"\t"}; }
 fn0="$PWD"
 OutGroup="${fn0/*qpAdm\//}"
 while read r; do
@@ -20,8 +20,9 @@ while read r; do
 	sample=${Lefts[0]}
 	Sources=(${Lefts[@]:1})
 	joinSources=$(join_by , ${Sources[@]})
-	if [[ ${#Sources[@]} -lt 4 ]]; then
-		Buffer=$(repeatTab ${#Sources[@]})
+	if [[ ${#Sources[@]} -lt 5 ]]; then
+		let Length=${#Sources[@]}+1
+		Buffer=$(repeatTab ${Length})
 	fi
-	echo -e "${sample}\t${OutGroup}\t${joinSources}\t${temp1%infeasible}${Buffer}\t${temp2}"
+	echo -e "${sample}\t${OutGroup}\t${joinSources}\t${temp1%infeasible}${Buffer}${temp2}"
 done < <(ls -1 ${fn0}/*.out)

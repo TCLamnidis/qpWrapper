@@ -8,12 +8,18 @@ OutGroup="${fn0/*${Type}\//}"
 while read r; do
 	unset Lefts
 	unset Rights
+	unset temp3
+	unset temp4
 	switch1='off'
 
 ## qpAdm Parser
 	if [[ $Type == "qpAdm" ]]; then
-		temp1=$(grep "0  0" $r | tr -s " " | sed -e 's/ /\t/g' | cut -f 6-)
-		temp2=$(grep "errors:" $r | tr -s " " | sed -e 's/ /\t/g'| cut -f 4-)
+		temp=$(grep -n "0  0" ${r} | tr -s " ")
+		temp1=$(echo $temp | sed -e 's/ /\t/g' | cut -f 6-)
+		let ResultLine=$(echo $temp | sed -e 's/ /\t/g' | cut -f 1 | rev | cut -c 2- | rev)+1
+		temp=$(grep -n "errors:" ${r} | tr -s " " | sed -e 's/ /\t/g' )
+		temp2=$(echo $temp | sed -e 's/ /\t/g' | cut -f 4-)
+		let ErrorLine=$(echo $temp | sed -e 's/ /\t/g' | cut -f 1 | rev | cut -c 2- | rev)+1
 		while read f; do
 			if [[ ${f} == "right pops:" ]]; then
 				break
@@ -23,6 +29,12 @@ while read r; do
 				switch1='on'
 			fi
 		done < <(cat ${r})
+		if [[ ${temp1} == *"..." ]] && [[ ${temp2} == *"..." ]]; then
+			temp1=${temp1%...}
+			temp2=${temp2%...}
+			temp3=$(sed "${ResultLine}q;d" ${r} | tr -s " " | sed -e 's/ /\t/g' | cut -f 2-)
+			temp4=$(sed "${ErrorLine}q;d" ${r} | tr -s " " | sed -e 's/ /\t/g' | cut -f 2-)
+		fi
 		sample=${Lefts[0]}
 		Sources=(${Lefts[@]:1})
 		joinSources=$(join_by , ${Sources[@]})
@@ -30,7 +42,7 @@ while read r; do
 			let Length=${#Sources[@]}+1
 			Buffer=$(repeatTab ${Length})
 		fi
-		echo -e "${sample}\t${OutGroup}\t${joinSources}\t${temp1%infeasible}${Buffer}${temp2}"
+		echo -e "${sample}\t${OutGroup}\t${joinSources}\t${temp1%infeasible}${temp3%infeasible}${Buffer}${temp2}${temp4}"
 
 ## qpWave parsing
 	elif [[ $Type == "qpWave" ]]; then

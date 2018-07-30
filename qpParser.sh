@@ -35,6 +35,8 @@ while read r; do
 			temp3=$(sed "${ResultLine}q;d" ${r} | tr -s " " | sed -e 's/ /\t/g' | cut -f 2-)
 			temp4=$(sed "${ErrorLine}q;d" ${r} | tr -s " " | sed -e 's/ /\t/g' | cut -f 2-)
 		fi
+		ProportionsPrint="${temp1}${temp3}"
+		ProportionsPrint="${ProportionsPrint%infeasible}"
 		sample=${Lefts[0]}
 		Sources=(${Lefts[@]:1})
 		joinSources=$(join_by , ${Sources[@]})
@@ -42,7 +44,8 @@ while read r; do
 			let Length=${#Sources[@]}+1
 			Buffer=$(repeatTab ${Length})
 		fi
-		echo -e "${sample}\t${OutGroup}\t${joinSources}\t${temp1%infeasible}${temp3%infeasible}${Buffer}${temp2}${temp4}"
+		# echo -e "${ProportionsPrint%	}"
+		echo -e "${sample}\t${OutGroup}\t${joinSources}\t${ProportionsPrint%	}\t${Buffer}${temp2}${temp4}"
 
 ## qpWave parsing
 	elif [[ $Type == "qpWave" ]]; then

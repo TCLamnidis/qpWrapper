@@ -34,7 +34,7 @@ while true ; do
     esac
 done
 
-if [ "$ALLSNPS" == "FALSE" ]; then
+if [[ "$ALLSNPS" == "FALSE" ]]; then
 	OUTTYPE="$TYPE.NoAllSnps"
 else
 	OUTTYPE=$TYPE
@@ -45,7 +45,8 @@ INDIR=/projects1/AncientFinnish/Revision/data
 OUTDIR=/projects1/AncientFinnish/Revision #Subdirectories will be created within this directory to contain the results from the runs.
 GENO=$INDIR/L35.Mittnik.Saag.Jones.Data.geno
 SNP=$INDIR/L35.Mittnik.Saag.Jones.Data.snp
-IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Group.ind
+IND=$INDIR/PattersonTests.ind
+# IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Group.ind
 # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.IceAgeClusters.ind
 # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.ind
 # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Each.AllSaami
@@ -84,7 +85,7 @@ if [[ $TYPE == "qpWave" ]]; then
 	printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
 	printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
 	printf "details:\tYES\n" >>$PARAMSFILE
-	if [ $ALLSNPS!="FALSE" ]; then
+	if [[ "$ALLSNPS" != "FALSE" ]]; then
 		printf "allsnps:\tYES\n" >>$PARAMSFILE
 	fi
 	LOG=$OUTDIR2/Logs/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
@@ -101,7 +102,7 @@ fi
 for SAMPLE in ${SAMPLES[@]}; do
 	TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
 	POPLEFT=$TEMPDIR/Left
-	if [ "$SAMPLE" != "" ]; then
+	if [[ "$SAMPLE" != "" ]]; then
 		printf "$SAMPLE\n" >$POPLEFT
 	else
 		printf "" >$POPLEFT
@@ -123,11 +124,11 @@ for SAMPLE in ${SAMPLES[@]}; do
 	printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
 	printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
 	printf "details:\tYES\n" >>$PARAMSFILE
-	if [ $ALLSNPS!="FALSE" ]; then
+	if [[ "$ALLSNPS" != "FALSE" ]]; then
 		printf "allsnps:\tYES\n" >>$PARAMSFILE
 	fi
 	
-	if [ "$SAMPLE" != "" ]; then
+	if [[ "$SAMPLE" != "" ]]; then
 		LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
 		OUT=$OUTDIR2/$SAMPLE.$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
 	else

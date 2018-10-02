@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 
-#You should be editing ONLY the paths in lines 36-40! 
-
 TEMP=`getopt -q -o haS:R:L:D: --long help,Sample:,Right:,Ref:,Left:,Source:,SubDir: -n 'qpWrapper.sh' -- "$@"`
 eval set -- "$TEMP"
 
 function Helptext {
-	echo -ne "\t usage: qpWrapper.sh [options]\n\n"
+	echo -ne "\t usage: qpWrapper.sh [options] (qpWave|qpAdm)\n\n"
 	echo -ne "This programme will submit multiple qpWave/qpAdm runs, one for each Sample, with the rest of your Left and Right pops constant.\n\n"
 	echo -ne "options:\n"
 	echo -ne "-S, --Sample\t\tName of your sample. Can be provided multiple times.\n"
@@ -41,17 +39,6 @@ else
 fi
 
 source ~/.qpWrapper.config
-# # EDIT ONLY THIS PART
-# INDIR=/projects1/AncientFinnish/Revision/data
-# OUTDIR=/projects1/AncientFinnish/Revision #Subdirectories will be created within this directory to contain the results from the runs.
-# GENO=$INDIR/L35.Mittnik.Saag.Jones.Data.geno
-# SNP=$INDIR/L35.Mittnik.Saag.Jones.Data.snp
-# IND=$INDIR/PattersonTests.ind
-# # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Group.ind
-# # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.IceAgeClusters.ind
-# # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.ind
-# # IND=$INDIR/L35.Mittnik.Saag.Jones.Data.Each.AllSaami
-# #DONT EDIT BELOW HERE
 
 OUTDIR2=$OUTDIR/$TYPE/$SUBDIR
 mkdir -p $OUTDIR2/Logs

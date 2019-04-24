@@ -104,6 +104,7 @@ while read r; do
             for i in `seq 0 1 $(expr ${#temp3[@]} - 1)`; do 
                 echo -e "${OutGroup}\t${joinRights}\t${joinLefts}\t${temp3[-i-1]}\twaves: $(expr ${#temp3[@]} - `expr ${i}`)"
             done
+            echo ""
         else
             echo -e "${OutGroup}\t${joinRights}\t${joinLefts}\t${temp3[-1]}"
         fi

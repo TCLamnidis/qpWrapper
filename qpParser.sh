@@ -10,7 +10,7 @@ function Helptext {
     echo -ne "-d, --details\t\tWhen parsing qpWave, the tail difference for each rank will be printed (only n-1 rank is printed by default). When parsing qpAdm, the full list of right populations is displayed, instead of the qpWave directory for the model.\n"
 }
 
-TEMP=`getopt -q -o dh --long details,help -n 'qpParser.sh' -- "$@"`
+TEMP=`getopt -q -o dnh --long details,newline,help -n 'qpParser.sh' -- "$@"`
 eval set -- "$TEMP"
 
 if [ $? -ne 0 ]
@@ -20,7 +20,8 @@ fi
 
 while true ; do
     case "$1" in
-        -d|--details) Details="TRUE"; shift 2;;
+        -d|--details) Details="TRUE"; shift;;
+        -n|--newline) NewLine="FALSE"; shift;;
         -h|--help) Helptext; exit 0 ;;
         *) break;;
     esac
@@ -104,7 +105,9 @@ while read r; do
             for i in `seq 0 1 $(expr ${#temp3[@]} - 1)`; do 
                 echo -e "${OutGroup}\t${joinRights}\t${joinLefts}\t${temp3[-i-1]}\twaves: $(expr ${#temp3[@]} - `expr ${i}`)"
             done
-            echo ""
+            if [[ $NewLine != "FALSE" ]]; then
+                echo ""
+            fi
         else
             echo -e "${OutGroup}\t${joinRights}\t${joinLefts}\t${temp3[-1]}"
         fi

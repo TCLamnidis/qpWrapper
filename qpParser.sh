@@ -9,9 +9,10 @@ function Helptext {
     echo -ne "-h, --help\t\tPrint this text and exit.\n"
     echo -ne "-t, --type\t\tSpecify the parsing type you require. If not provided, qpParser will try to infer the parsing type from the current directory path. One of qpAdm|qpWave|qpGraph.\n"
     echo -ne "-d, --details\t\tWhen parsing qpWave, the tail difference for each rank will be printed (only n-1 rank is printed by default). When parsing qpAdm, the full list of right populations is displayed, instead of the qpWave directory for the model.\n"
+    echo -ne "-s, --suffix\t\tInput file prefix to look for. By default this is '.out' for qpWave/qpAdm parsing, and '.log' for qpGraph parsing.\n"
 }
 
-TEMP=`getopt -q -o t:dnh --long type:,details,newline,help -n 'qpParser.sh' -- "$@"`
+TEMP=`getopt -q -o t:s:dnh --long type:,suffix:,details,newline,help -n 'qpParser.sh' -- "$@"`
 eval set -- "$TEMP"
 
 if [ $? -ne 0 ]
@@ -30,6 +31,7 @@ while true ; do
         esac ;;
     -d|--details) Details="TRUE"; shift;;
     -n|--newline) NewLine="FALSE"; shift;;
+    -s|--suffix) suffix=$2; set_suffix="TRUE"; shift 2 ;;
     -h|--help) Helptext; exit 0 ;;
     *) break;;
 esac
@@ -43,13 +45,19 @@ if ! [[ -v Type ]]; then
 fi
 OutGroup="${fn0/*${Type}\//}"
 
+if [[ ${set_suffix} != "TRUE" ]]; then
+    suffix=".out"
+fi
+
 while read r; do
     unset Lefts
     unset Rights
     unset temp3
     unset temp4
     switch1='off'
-
+    
+    
+    
 ## qpAdm Parser
     if [[ $Type == "qpAdm" ]]; then
         switch2='off'
@@ -123,7 +131,11 @@ while read r; do
             echo -e "${OutGroup}\t${joinRights}\t${joinLefts}\t${temp3[-1]}"
         fi
     fi
-done < <(ls -1 ${fn0}/*.out)
+done < <(ls -1 ${fn0}/*${suffix})
+
+if [[ ${set_suffix} != "TRUE" ]]; then
+    suffix=".log"
+fi
 
 ## qpGraph logfile parsing
 while read r; do
@@ -152,4 +164,4 @@ while read r; do
     echo -e "$(basename ${r})\t${score}\t${worst_stat}\t${outlier_number}"
     # echo ${outlier_number}
     fi
-done < <(ls -1 ${fn0}/*.log)
+done < <(ls -1 ${fn0}/*${suffix})

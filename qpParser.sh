@@ -7,10 +7,11 @@ function Helptext {
     echo -ne "This programme will parse the output of all qpWave/qpAdm output files in the folder and print out a summary.\n\n"
     echo -ne "options:\n"
     echo -ne "-h, --help\t\tPrint this text and exit.\n"
+    echo -ne "-t, --type\t\tSpecify the parsing type you require. If not provided, qpParser will try to infer the parsing type from the current directory path. One of qpAdm|qpWave|qpGraph.\n"
     echo -ne "-d, --details\t\tWhen parsing qpWave, the tail difference for each rank will be printed (only n-1 rank is printed by default). When parsing qpAdm, the full list of right populations is displayed, instead of the qpWave directory for the model.\n"
 }
 
-TEMP=`getopt -q -o dnh --long details,newline,help -n 'qpParser.sh' -- "$@"`
+TEMP=`getopt -q -o t:dnh --long type:,details,newline,help -n 'qpParser.sh' -- "$@"`
 eval set -- "$TEMP"
 
 if [ $? -ne 0 ]
@@ -20,16 +21,26 @@ fi
 
 while true ; do
     case "$1" in
-        -d|--details) Details="TRUE"; shift;;
-        -n|--newline) NewLine="FALSE"; shift;;
-        -h|--help) Helptext; exit 0 ;;
-        *) break;;
-    esac
+    -t|--type)
+        case "$2" in
+        qpAdm) Type="qpAdm"; shift 2 ;;
+        qpWave) Type="qpWave"; shift 2 ;;
+        qpGraph) Type="qpGraph"; shift 2 ;;
+        *) echo -e "Type requested is not supported.\n"; Helptext; exit 1 ;;
+        esac ;;
+    -d|--details) Details="TRUE"; shift;;
+    -n|--newline) NewLine="FALSE"; shift;;
+    -h|--help) Helptext; exit 0 ;;
+    *) break;;
+esac
 done
 
-
 fn0="$PWD"
-Type="$(echo ${fn0/*qp/qp} | cut -d "/" -f1)"
+
+## If parsing type was not set via the option, infer from directory names.
+if ! [[ -v Type ]]; then
+    Type="$(echo ${fn0/*qp/qp} | cut -d "/" -f1)"
+fi
 OutGroup="${fn0/*${Type}\//}"
 
 while read r; do

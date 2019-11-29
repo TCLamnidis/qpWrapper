@@ -124,3 +124,32 @@ while read r; do
         fi
     fi
 done < <(ls -1 ${fn0}/*.out)
+
+## qpGraph logfile parsing
+while read r; do
+    let outlier_number=0
+    graph_switch1="off"
+    if [[ $Type == "qpGraph" ]]; then
+        while read f; do
+            if [[ ${f} == "## qpGraph version:"* ]]; then
+                let version=$(echo "${f}" | cut -d " " -f4)
+            elif [[ "${version}" -ge "5052" && ${f} == "score:"* ]]; then 
+                score=$(echo ${f} | cut -d " " -f 2)
+                # echo $score
+            elif [[ "${version}" -lt "5052" ]]; then 
+                score="NA"
+            elif [[ ${f} == "outliers:" ]]; then
+                graph_switch1="on"
+            elif [[ ${f} == "" ]]; then
+                graph_switch1="off"
+            elif [[ ${graph_switch1} == "on" ]]; then
+                let outlier_number+=1
+            elif [[ ${f} == "worst"* ]]; then
+                worst_stat=$(echo "${f}" | tr -s " " | cut -d " " -f 11)
+                # echo ${worst_stat}
+            fi
+        done < <(cat ${r})
+    echo -e "$(basename ${r})\t${score}\t${worst_stat}\t${outlier_number}"
+    # echo ${outlier_number}
+    fi
+done < <(ls -1 ${fn0}/*.log)

@@ -44,11 +44,12 @@ OUTDIR2=$OUTDIR/$TYPE/$SUBDIR
 mkdir -p $OUTDIR2/Logs
 mkdir -p $OUTDIR2/.tmp
 
-if [[ $HOSTNAME == mpi* ]] ; then
-	SlurmPart="-p short "
-else
-	SlurmPart=""
-fi
+SlurmPart="-p short "
+# if [[ $HOSTNAME == mpi* ]] ; then
+#     SlurmPart="-p short "
+# else
+#     SlurmPart=""
+# fi
 
 if [[ $TYPE == "qpWave" ]]; then
 	unset SAMPLES

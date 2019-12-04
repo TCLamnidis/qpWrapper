@@ -10,9 +10,10 @@ function Helptext {
     echo -ne "-t, --type\t\tSpecify the parsing type you require. If not provided, qpParser will try to infer the parsing type from the current directory path. One of qpAdm|qpWave|qpGraph.\n"
     echo -ne "-d, --details\t\tWhen parsing qpWave, the tail difference for each rank will be printed (only n-1 rank is printed by default). When parsing qpAdm, the full list of right populations is displayed, instead of the qpWave directory for the model.\n"
     echo -ne "-s, --suffix\t\tInput file prefix to look for. By default this is '.out' for qpWave/qpAdm parsing, and '.log' for qpGraph parsing.\n"
+    echo -ne "-c, --cutoff\t\tZ-Score cutoff for qpGraph parsing. When supplied, any absolute Z-Score above the cutoff will not be printed.\n"
 }
 
-TEMP=`getopt -q -o t:s:dnh --long type:,suffix:,details,newline,help -n 'qpParser.sh' -- "$@"`
+TEMP=`getopt -q -o -c:t:s:dnh --long cutoff:,type:,suffix:,details,newline,help -n 'qpParser.sh' -- "$@"`
 eval set -- "$TEMP"
 
 if [ $? -ne 0 ]
@@ -29,6 +30,7 @@ while true ; do
         qpGraph) Type="qpGraph"; shift 2 ;;
         *) echo -e "Type requested is not supported.\n"; Helptext; exit 1 ;;
         esac ;;
+    -c|--cutoff) cutoff="$2"; shift 2 ;;
     -d|--details) Details="TRUE"; shift;;
     -n|--newline) NewLine="FALSE"; shift;;
     -s|--suffix) suffix=$2; set_suffix="TRUE"; shift 2 ;;
@@ -161,7 +163,14 @@ while read r; do
                 # echo ${worst_stat}
             fi
         done < <(cat ${r})
-    echo -e "$(basename ${r})\t${score}\t${worst_stat}\t${outlier_number}"
-    # echo ${outlier_number}
+        if [[ -v cutoff ]] && (( $(echo "$worst_stat > $cutoff"| bc -l) )); then
+            :
+        else
+            echo -e "$(basename ${r})\t${score}\t${worst_stat}\t${outlier_number}"
+        fi
+        # elif ![[ -v cutoff ]]; then
+#             echo -e "$(basename ${r})\t${score}\t${worst_stat}\t${outlier_number}"
+#         fi
+## echo ${outlier_number}
     fi
 done < <(ls -1 ${fn0}/*${suffix})

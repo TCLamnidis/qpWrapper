@@ -163,7 +163,7 @@ while read r; do
                 # echo ${worst_stat}
             fi
         done < <(cat ${r})
-        if [[ -v cutoff ]] && (( $(echo "$worst_stat > $cutoff"| bc -l) )); then
+        if [[ -v cutoff ]] && (( $(echo "${worst_stat#-} > ${cutoff}"| bc -l) )); then
             :
         else
             echo -e "$(basename ${r})\t${score}\t${worst_stat}\t${outlier_number}"

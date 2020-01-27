@@ -7,19 +7,22 @@ function Helptext {
     echo -ne "This programme will parse the output of all qpWave/qpAdm output files in the folder and print out a summary.\n\n"
     echo -ne "options:\n"
     echo -ne "-h, --help\t\tPrint this text and exit.\n"
+    echo -ne "--header\t\tIn qpGraph parssing, print a header line.\n"
     echo -ne "-t, --type\t\tSpecify the parsing type you require. If not provided, qpParser will try to infer the parsing type from the current directory path. One of qpAdm|qpWave|qpGraph.\n"
     echo -ne "-d, --details\t\tWhen parsing qpWave, the tail difference for each rank will be printed (only n-1 rank is printed by default). When parsing qpAdm, the full list of right populations is displayed, instead of the qpWave directory for the model.\n"
     echo -ne "-s, --suffix\t\tInput file prefix to look for. By default this is '.out' for qpWave/qpAdm parsing, and '.log' for qpGraph parsing.\n"
     echo -ne "-c, --cutoff\t\tZ-Score cutoff for qpGraph parsing. When supplied, any absolute Z-Score above the cutoff will not be printed.\n"
 }
 
-TEMP=`getopt -q -o -c:t:s:dnh --long cutoff:,type:,suffix:,details,newline,help -n 'qpParser.sh' -- "$@"`
+TEMP=`getopt -q -o -c:t:s:dnh --long cutoff:,type:,suffix:,details,newline,help,header -n 'qpParser.sh' -- "$@"`
 eval set -- "$TEMP"
 
 if [ $? -ne 0 ]
 then
     Helptext
 fi
+
+header="FALSE"
 
 while true ; do
     case "$1" in
@@ -34,6 +37,7 @@ while true ; do
     -d|--details) Details="TRUE"; shift;;
     -n|--newline) NewLine="FALSE"; shift;;
     -s|--suffix) suffix="$2"; set_suffix="TRUE"; shift 2 ;;
+    --header) header="TRUE"; shift ;;
     -h|--help) Helptext; exit 0 ;;
     *) break;;
 esac
@@ -142,6 +146,9 @@ if [[ ${set_suffix} != "TRUE" ]]; then
 fi
 
 ## qpGraph logfile parsing
+if [[ $header == "TRUE" ]]; then
+    echo -e "Logfile\tScore\tdof\tp-value\tworst f4diff\tnum outliers"
+fi
 if [[ $Type == "qpGraph" ]]; then
     while read r; do
         let outlier_number=0
@@ -153,12 +160,17 @@ if [[ $Type == "qpGraph" ]]; then
                     let version=$(echo "${f}" | cut -d " " -f4)
                 elif [[ "${version}" -ge "5052" && ${f} == "score:"* ]]; then
                     score=$(echo ${f} | cut -d " " -f 2)
+                    dof=$(echo ${f} | cut -d " " -f 4)
+                    p_value=$(echo ${f} | cut -d " " -f 7)
                     # echo $score
                 elif [[ "${version}" -ge "5052" && ${f} == "final score:"* ]]; then
                     score=$(echo ${f} | cut -d " " -f 3)
+                    dof=$(echo ${f} | cut -d " " -f 5)
+                    p_value=$(echo ${f} | cut -d " " -f 8)
                     # echo $score
                 elif [[ "${version}" -lt "5052" ]]; then
                     score="NA"
+                    p_value="NA"
                 elif [[ ${f} == "outliers:" ]]; then
                     graph_switch1="on"
                 elif [[ ${f} == "" ]]; then
@@ -173,7 +185,7 @@ if [[ $Type == "qpGraph" ]]; then
             if [[ -v cutoff ]] && (( $(echo "${worst_stat#-} > ${cutoff}"| bc -l) )); then
                 :
             else
-                echo -e "$(basename ${r})\t${score}\t${worst_stat}\t${outlier_number}"
+                echo -e "$(basename ${r})\t${score}\t${dof}\t${p_value}\t${worst_stat}\t${outlier_number}"
             fi
             # elif ![[ -v cutoff ]]; then
     #             echo -e "$(basename ${r})\t${score}\t${worst_stat}\t${outlier_number}"

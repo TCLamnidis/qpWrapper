@@ -3,8 +3,8 @@ function join_by() { local IFS="$1"; shift; echo "$*"; }
 function repeatTab() { Length="$1"; let reps=6-${Length}; myString="$(printf "%${reps}s")"; echo ${myString// /"\t"}; }
 
 function Helptext {
-    echo -ne "\t usage: qpParser.sh [options] (qpWave|qpAdm)\n\n"
-    echo -ne "This programme will parse the output of all qpWave/qpAdm output files in the folder and print out a summary.\n\n"
+    echo -ne "\t usage: qpParser.sh [options]\n\n"
+    echo -ne "This programme will parse the output of all qpWave/qpAdm/qpGraph output files in the folder and print out a summary.\n\n"
     echo -ne "options:\n"
     echo -ne "-h, --help\t\tPrint this text and exit.\n"
     echo -ne "--header\t\tIn qpGraph parssing, print a header line.\n"

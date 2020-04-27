@@ -42,6 +42,12 @@ else
     OUTTYPE=$TYPE
 fi
 
+if [[ "$Rotating" == "TRUE" ]]; then
+    OUTTYPE="$OUTTYPE.rotating"
+else
+    OUTTYPE="$OUTTYPE"
+fi
+
 source ~/.qpWrapper.config
 
 OUTDIR2=$OUTDIR/$TYPE/$SUBDIR

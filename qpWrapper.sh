@@ -98,69 +98,70 @@ if [[ $TYPE == "qpWave" ]]; then
     sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
 fi
 
-for idx in ${!SAMPLES[@]}; do
-    SAMPLE=${SAMPLES[${idx}]} ## SAMPLE is now set by index due to implementation of rotating models.
-    
-    ## If rotating models are requested, create a list of all SAMPLES except the current one and append it to the RIGHTS to make the list of Reference populations.
-    if [[ "$Rotating" == "TRUE" ]]; then
-        Unused_Samples=($(exclude_element ${idx} ${SAMPLES[@]}))
-        REFS=(${RIGHTS[@]} ${Unused_Samples[@]})
-    else
-        REFS=(${RIGHTS[@]})
-    fi
-##    DEBUG
-#     echo "SAMPLE: ${SAMPLE}"
-#     echo "LEFTS:  ${LEFTS[@]}"
-#     echo "RIGHTS: ${RIGHTS[@]}"
-#     echo "REFS:   ${REFS[@]}"
-#     echo ""
-# done
-# exit 0
-    TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
-    POPLEFT=$TEMPDIR/Left
-    if [[ "$SAMPLE" != "" ]]; then
-        printf "$SAMPLE\n" >$POPLEFT
-    else
-        printf "" >$POPLEFT
-    fi
-    for POP in ${LEFTS[@]}; do
-        printf "$POP\n" >>$POPLEFT
-    done
-    
-    POPRIGHT=$TEMPDIR/Right
-    printf "" >$POPRIGHT
-    for REF in ${REFS[@]}; do
-        printf "$REF\n" >>$POPRIGHT
-    done
-    
-    PARAMSFILE=$TEMPDIR/Params
-    printf "genotypename:\t$GENO\n" > $PARAMSFILE
-    printf "snpname:\t$SNP\n" >> $PARAMSFILE
-    printf "indivname:\t$IND\n" >> $PARAMSFILE
-    printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
-    printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
-    printf "details:\tYES\n" >>$PARAMSFILE
-    if [[ "$ALLSNPS" != "FALSE" ]]; then
-        printf "allsnps:\tYES\n" >>$PARAMSFILE
-    fi
-    
-    if [[ "$SAMPLE" != "" ]]; then
-        LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
-        OUT=$OUTDIR2/$SAMPLE.$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
-    else
-        LOG=$OUTDIR2/Logs/$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
-        OUT=$OUTDIR2/$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
-    fi
-    if [[ $SAMPLE == "" && $TYPE == "qpAdm" ]]; then
-        continue
-    fi
-    ## DEBUG
-    # echo "OUT: $OUT"
-    # echo "LOG: $LOG"
-    # echo "LEFT: $POPLEFT"
-    # echo "RIGHT: $POPRIGHT"
-    # echo "PARAM: $PARAMSFILE"
-    # echo "${SAMPLE}_$TYPE"
-    sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
-done
-
+if [[ $TYPE == "qpAdm" ]]; then
+	for idx in ${!SAMPLES[@]}; do
+	    SAMPLE=${SAMPLES[${idx}]} ## SAMPLE is now set by index due to implementation of rotating models.
+	    
+	    ## If rotating models are requested, create a list of all SAMPLES except the current one and append it to the RIGHTS to make the list of Reference populations.
+	    if [[ "$Rotating" == "TRUE" ]]; then
+		Unused_Samples=($(exclude_element ${idx} ${SAMPLES[@]}))
+		REFS=(${RIGHTS[@]} ${Unused_Samples[@]})
+	    else
+		REFS=(${RIGHTS[@]})
+	    fi
+	##    DEBUG
+	#     echo "SAMPLE: ${SAMPLE}"
+	#     echo "LEFTS:  ${LEFTS[@]}"
+	#     echo "RIGHTS: ${RIGHTS[@]}"
+	#     echo "REFS:   ${REFS[@]}"
+	#     echo ""
+	# done
+	# exit 0
+	    TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
+	    POPLEFT=$TEMPDIR/Left
+	    if [[ "$SAMPLE" != "" ]]; then
+		printf "$SAMPLE\n" >$POPLEFT
+	    else
+		printf "" >$POPLEFT
+	    fi
+	    for POP in ${LEFTS[@]}; do
+		printf "$POP\n" >>$POPLEFT
+	    done
+	    
+	    POPRIGHT=$TEMPDIR/Right
+	    printf "" >$POPRIGHT
+	    for REF in ${REFS[@]}; do
+		printf "$REF\n" >>$POPRIGHT
+	    done
+	    
+	    PARAMSFILE=$TEMPDIR/Params
+	    printf "genotypename:\t$GENO\n" > $PARAMSFILE
+	    printf "snpname:\t$SNP\n" >> $PARAMSFILE
+	    printf "indivname:\t$IND\n" >> $PARAMSFILE
+	    printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
+	    printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
+	    printf "details:\tYES\n" >>$PARAMSFILE
+	    if [[ "$ALLSNPS" != "FALSE" ]]; then
+		printf "allsnps:\tYES\n" >>$PARAMSFILE
+	    fi
+	    
+	    if [[ "$SAMPLE" != "" ]]; then
+		LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
+		OUT=$OUTDIR2/$SAMPLE.$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
+	    else
+		LOG=$OUTDIR2/Logs/$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
+		OUT=$OUTDIR2/$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
+	    fi
+	    if [[ $SAMPLE == "" && $TYPE == "qpAdm" ]]; then
+		continue
+	    fi
+	    ## DEBUG
+	    # echo "OUT: $OUT"
+	    # echo "LOG: $LOG"
+	    # echo "LEFT: $POPLEFT"
+	    # echo "RIGHT: $POPRIGHT"
+	    # echo "PARAM: $PARAMSFILE"
+	    # echo "${SAMPLE}_$TYPE"
+	    sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
+	done
+fi

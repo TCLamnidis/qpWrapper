@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
+VERSION="0.1.0"
+
 function exclude_element() { idx=$1; shift 1; arr=($*); new_arr=(${arr[@]:0:${idx}} ${arr[@]:((${idx}+1)):${#arr[@]}}); echo ${new_arr[@]}; }
 
-TEMP=`getopt -q -o harS:R:L:D: --long help,rotating,Sample:,Right:,Ref:,Left:,Source:,SubDir: -n 'qpWrapper.sh' -- "$@"`
+TEMP=`getopt -q -o harvS:R:L:D: --long help,rotating,version,Sample:,Right:,Ref:,Left:,Source:,SubDir: -n 'qpWrapper.sh' -- "$@"`
 eval set -- "$TEMP"
 
 function Helptext {
@@ -14,7 +16,8 @@ function Helptext {
     echo -ne "-L, --Left, --Source\tThe Left Pops of your runs. Your Sample will be the first Left pop, followed by these. Can be provided multiple times.\n"
     echo -ne "-D, --SubDir\t\tWhen provided, results will be placed in a subdirectory with the name provided within the result directory. Deeper paths can be provided by using '/'.\n"
     echo -ne "-a, \t\t\tWhen provided, the option 'allsnps: YES' will NOT be provided.\n"
-    echo -ne "-r, --rotating \t\tWhen provided and submitting qpAdm runs, qpWrapper will submit 'rotating' models, where all Sample populations except the one currently tested are added to the end of the Right poplations. After Harvey et al. 2020.\n"
+    echo -ne "-r, --rotating \t\tWhen provided and submitting qpAdm runs, qpWrapper will submit 'rotating' models, where all Sample populations except the one currently tested are added\n\t\t\t\tto the end of the Right poplations. After Harvey et al. 2020.\n"
+    echo -ne "-v  -- version \t\tPrint qpWrapper version and exit.\n"
 }
 
 if [ $? -ne 0 ]
@@ -32,6 +35,7 @@ while true ; do
         -h|--help) Helptext; exit 0 ;;
         -a) ALLSNPS="FALSE"; shift 1;;
         -r|--rotating) Rotating="TRUE"; shift 1;;
+        -v|--version) echo ${VERSION}; exit 0;;
     *) echo -e "invalid option provided.\n"; Helptext; exit 1;;
     esac
 done

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+VERSION="0.1.0"
+
 function join_by() { local IFS="$1"; shift; echo "$*"; }
 function repeatTab() { Length="$1"; let reps=6-${Length}; myString="$(printf "%${reps}s")"; echo ${myString// /"\t"}; }
 
@@ -7,14 +9,15 @@ function Helptext {
     echo -ne "This programme will parse the output of all qpWave/qpAdm/qpGraph output files in the folder and print out a summary.\n\n"
     echo -ne "options:\n"
     echo -ne "-h, --help\t\tPrint this text and exit.\n"
-    echo -ne "--header\t\tIn qpGraph parssing, print a header line.\n"
+    echo -ne "--header\t\tIn qpGraph parsing, print a header line.\n"
     echo -ne "-t, --type\t\tSpecify the parsing type you require. If not provided, qpParser will try to infer the parsing type from the current directory path. One of qpAdm|qpWave|qpGraph.\n"
     echo -ne "-d, --details\t\tWhen parsing qpWave, the tail difference for each rank will be printed (only n-1 rank is printed by default). When parsing qpAdm, the full list of right populations is displayed, instead of the qpWave directory for the model.\n"
     echo -ne "-s, --suffix\t\tInput file prefix to look for. By default this is '.out' for qpWave/qpAdm parsing, and '.log' for qpGraph parsing.\n"
     echo -ne "-c, --cutoff\t\tZ-Score cutoff for qpGraph parsing. When supplied, any absolute Z-Score above the cutoff will not be printed.\n"
+    echo -ne "-v, --version\t\tPrint qpParser version and exit.\n"
 }
 
-TEMP=`getopt -q -o -c:t:s:dnh --long cutoff:,type:,suffix:,details,newline,help,header -n 'qpParser.sh' -- "$@"`
+TEMP=`getopt -q -o -c:t:s:dnhv --long cutoff:,type:,suffix:,details,newline,help,header,version -n 'qpParser.sh' -- "$@"`
 eval set -- "$TEMP"
 
 if [ $? -ne 0 ]
@@ -39,6 +42,7 @@ while true ; do
     -s|--suffix) suffix="$2"; set_suffix="TRUE"; shift 2 ;;
     --header) header="TRUE"; shift ;;
     -h|--help) Helptext; exit 0 ;;
+    -v|--version) echo $VERSION; exit 0;;
     *) break;;
 esac
 done

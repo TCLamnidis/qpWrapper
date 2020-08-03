@@ -4,10 +4,16 @@ import re, sys, os, gzip
 import numpy as np
 arg = sys.argv
 
+VERSION="0.1.0"
+
 def column(mat, i):
     return [row[i] for row in mat]
 
 argvec = [arg[i].split("=") for i in range(1,len(arg))]
+
+if "--version" in column(argvec,0):
+    print (VERSION, file=sys.stderr)
+    quit()
 
 inFile = [argval[1] for argval in argvec if argval[0] == "--in"][0]
 

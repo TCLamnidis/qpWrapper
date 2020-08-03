@@ -5,6 +5,7 @@ from operator import itemgetter
 import numpy as np
 arg = sys.argv
 
+VERSION="0.1.0"
 ## Description of flags
 ##   --in:            A prefix for the input scaffold graph
 ##   --at:            specify edge to add a branch in; otherwise, generate all possible cases
@@ -13,6 +14,7 @@ arg = sys.argv
 ##   --3way:          write down all graphs for three-way admixtue scenario
 ##   --outDir:        The directory to put the output graphs in.
 ##   --1way:          Only output 1 way models.
+##   --version:       Print graph_writer version and exit.
 
 def mkdir_p(path):
     try:
@@ -138,10 +140,13 @@ def add_edge(graph, edpos, pn=""):
             g2s.extend([vec for vec in tg2s if vec[0] == rn])
         return g2s
 
-
 r1 = os.getcwd() + "/"; os.chdir(r1)
 argvec = [arg[i].split("=") for i in range(1,len(arg))]
 flags = [val for val in column(argvec, 0)]
+
+if "--version" in flags:
+    print VERSION
+    quit()
 
 ## Print option help
 if "--help" in flags:
@@ -155,6 +160,7 @@ if "--help" in flags:
     ##   --3way:          write down all graphs for three-way admixtue scenario
     ##   --outDir:        The directory to put the output graphs in.
     ##   --1way:          Only output 1 way models.
+    ##   --version:       Print graph_writer version and exit.
     """; quit()
 
 ## 1. Write down a two-population graph if no graph is provided

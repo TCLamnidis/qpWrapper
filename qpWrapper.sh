@@ -83,8 +83,6 @@ SlurmPart="-p short "
 #     SlurmPart=""
 # fi
 
-unset params_files
-unset log_files
 unset job_commands
 
 if [[ $TYPE == "qpWave" ]]; then
@@ -126,7 +124,8 @@ fi
 
 
 if [[ ${Submission} == "Array" ]]; then
-  command_file=$(mktemp $OUTDIR2/.tmp/slurm_commands_XXXXXX)
+  array_dir=$(mktemp -d $OUTDIR2/.tmp/array_XXXXXX)
+  command_file="${array_dir}/slurm_commands"
 fi
 
 if [[ $TYPE == "qpAdm" ]]; then
@@ -188,11 +187,7 @@ if [[ $TYPE == "qpAdm" ]]; then
       fi
       
       if [[ ${Submission} == "Array" ]]; then
-        params_files+=($PARAMSFILE)
-        log_files+=($LOG)
-        output_files+=($OUT)
-        job_commands+=("$TYPE -p $PARAMSFILE >$OUT 2>$LOG")
-        echo "$TYPE -p $PARAMSFILE >>$OUT 2>>$LOG" >> ${command_file}
+        echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG" >> ${command_file}
       ## DEBUG
       # echo "OUT: $OUT"
       # echo "LOG: $LOG"
@@ -207,13 +202,14 @@ if [[ $TYPE == "qpAdm" ]]; then
   if [[ ${Submission} == "Array" ]]; then
     # touch ${log_files[@]} ${output_files[@]}
     max_array_index=$(bc <<< "$(wc -l ${command_file}| cut -f 1 -d ' ') - 1" )
-    sbatch $SlurmPart--job-name="$(basename ${command_file}).${SUBDIR}.${OUTTYPE}" \
+    sbatch $SlurmPart--job-name="${array_dir#*/}.${SUBDIR}.${OUTTYPE}" \
       --mem=4GB -c1  -a 0-${max_array_index}%${num_simultaneous_jobs} \
       --export=command_file=${command_file}\
-    <<- 'END'
+      -o "${array_dir}/%A_%a.log" \
+      <<- 'END'
 		#!/usr/bin/env bash
 		while read line; do
-		  job_commands+=("${line}")
+			job_commands+=("${line}")
 			# echo $line
 		done < ${command_file}
 		for i in ${params_files[@]}; do
@@ -224,8 +220,8 @@ if [[ $TYPE == "qpAdm" ]]; then
 		# echo ''
 		# echo ${job_commands[0]}
 		# echo ''
-		# echo ${current_command}
-		# ${current_command}
+		# echo "bash -c ${current_command}"
+		bash -c "${current_command}"
 		END
   fi
 fi

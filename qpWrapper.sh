@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-VERSION="0.1.0"
+VERSION="0.1.1"
 
 function exclude_element() { idx=$1; shift 1; arr=($*); new_arr=(${arr[@]:0:${idx}} ${arr[@]:((${idx}+1)):${#arr[@]}}); echo ${new_arr[@]}; }
 

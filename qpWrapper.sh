@@ -18,7 +18,7 @@ function Helptext {
     echo -ne "-A, \t\t\tWhen provided, the option 'allsnps: YES' will NOT be provided.\n"
     echo -ne "-r, --rotating \t\tWhen provided and submitting qpAdm runs, qpWrapper will submit 'rotating' models, where all Sample populations except the one currently tested are added\n\t\t\t\tto the end of the Right poplations. After Harvey et al. 2020.\n"
     echo -ne "-a, --array \t\tWhen provided, the qpAdm jobs will be submitted in a slurm array instead. The number of jobs to run simultaneously should be provided to this option.\n"
-    echo -ne "-v  -- version \t\tPrint qpWrapper version and exit.\n"
+    echo -ne "-v, -- version \t\tPrint qpWrapper version and exit.\n"
 }
 
 if [ $? -ne 0 ]

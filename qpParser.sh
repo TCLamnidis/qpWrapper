@@ -78,7 +78,7 @@ if [[ $Type == "qpAdm" || $Type == "qpWave" ]]; then
             temp=$(grep -n "errors:" ${r} | tr -s " " | sed -e 's/ /\t/g' )
             temp2=$(echo $temp | sed -e 's/ /\t/g' | cut -f 4-)
             let ErrorLine=$(echo $temp | sed -e 's/ /\t/g' | cut -f 1 | rev | cut -c 2- | rev)+1
-            nested=$(grep -n "nested" ${r} | tr -s " " | sed -e 's/ /\t/g' | cut -f 3,11 | paste -sd ' ')
+            nested=$(grep -n "nested" ${r} | tr -s " " | sed -e 's/ /\t/g' | cut -f 3,11 | paste -s)
             while read f; do
                 if [[ ${switch2} == 'on' && ${f} == "" ]]; then
                     break
@@ -111,7 +111,7 @@ if [[ $Type == "qpAdm" || $Type == "qpWave" ]]; then
                 OutGroup=$(join_by , ${Rights[@]})
             fi
             # echo -e "${ProportionsPrint%  }"
-            echo -e "${sample}\t${OutGroup}\t${joinSources}\t${ProportionsPrint%	}\t${Buffer}${temp2}${temp4} ${nested}"
+            echo -e "${sample}\t${OutGroup}\t${joinSources}\t${ProportionsPrint%	}\t${Buffer}${temp2}${temp4}\t${nested}"
 
     ## qpWave parsing
         elif [[ $Type == "qpWave" ]]; then

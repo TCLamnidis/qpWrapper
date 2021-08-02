@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-VERSION="0.1.1"
+VERSION="0.1.2"
 
 ## Function that takes an element and a list and returns the contents of that list without the specified element.
 function exclude_element() { idx=$1; shift 1; arr=($*); new_arr=(${arr[@]:0:${idx}} ${arr[@]:((${idx}+1)):${#arr[@]}}); echo ${new_arr[@]}; }
 
 ## Parse CLI args.
-TEMP=`getopt -q -o hArvS:R:L:D:a:c: --long help,rotating,version,Sample:,Right:,Ref:,Left:,Source:,SubDir:,array:,chrom: -n 'qpWrapper.sh' -- "$@"`
+TEMP=`getopt -q -o hArvtS:R:L:D:a:c: --long help,rotating,version,test,Sample:,Right:,Ref:,Left:,Source:,SubDir:,array:,chrom: -n 'qpWrapper.sh' -- "$@"`
 eval set -- "$TEMP"
+
+## Debugging
+# echo $TEMP
 
 ## Helptext function
 function Helptext {
@@ -20,9 +23,10 @@ function Helptext {
     echo -ne "-D, --SubDir\t\tWhen provided, results will be placed in a subdirectory with the name provided within the result directory. Deeper paths can be provided by using '/'.\n"
     echo -ne "-A, \t\t\tWhen provided, the option 'allsnps: YES' will NOT be provided.\n"
     echo -ne "-c, --chrom \t\tWhen provided, qpWave/qpAdm will only use snps from the specified chromosome. Chromosome names in eigenstrat format are integers.\n"    
-    echo -ne "-r, --rotating \t\tWhen provided and submitting qpAdm runs, qpWrapper will submit 'rotating' models, where all Sample populations except the one currently tested are added\n\t\t\t\tto the end of the Right poplations. After Harvey et al. 2020.\n"
+    echo -ne "-r, --rotating \t\tWhen provided and submitting qpAdm runs, qpWrapper will submit 'rotating' models, where all Sample populations except the one currently tested are added\n\t\t\t\tto the end of the Right poplations.\n"
     echo -ne "-a, --array \t\tWhen provided, the qpAdm jobs will be submitted in a slurm array instead. The number of jobs to run simultaneously should be provided to this option.\n"
-    echo -ne "-v, -- version \t\tPrint qpWrapper version and exit.\n"
+    echo -ne "-t, --test \t\tUsed to test the commands to be submitted. Instead of submitting them, qpWrapper will simply print them, while still creating the required files. \n\t\t\t\tUseful for troubleshooting and integrating with broader pipelines.\n"
+    echo -ne "-v, --version \t\tPrint qpWrapper version and exit.\n"
 }
 
 if [ $? -ne 0 ]
@@ -48,6 +52,7 @@ while true ; do
         -c|--chrom) set_chrom="$2"; shift 2;;
         -A) ALLSNPS="FALSE"; shift 1;;
         -r|--rotating) Rotating="TRUE"; shift 1;;
+        -t|--test) dry_run="TRUE"; shift 1;;
         -v|--version) echo ${VERSION}; exit 0;;
         ## When --array is specified, check that parameter is an integer, else throw an error.
         -a|--array)
@@ -136,7 +141,11 @@ if [[ $TYPE == "qpWave" ]]; then
     # echo "RIGHT: $POPRIGHT"
     # echo "PARAM: $PARAMSFILE"
     # echo "${SAMPLE}_$TYPE"
-    sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
+    if [[ "${dry_run}" == "TRUE" ]]; then
+        echo "$TYPE -p $PARAMSFILE >$OUT"
+    else
+        sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
+    fi
 fi
 
 ## If submittiing to a alurm array, create a temp dir for the array and the filename to the command file.
@@ -209,7 +218,9 @@ if [[ $TYPE == "qpAdm" ]]; then
     fi
     
     ## If array submission is specified, print all commands that would be ran into a file. esle submit each command as its own job.
-    if [[ ${Submission} == "Array" ]]; then
+    if [[ "${dry_run}" == "TRUE" ]]; then
+      echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG"
+    elif [[ ${Submission} == "Array" ]]; then
       echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG" >> ${command_file}
     ## DEBUG
     # echo "OUT: $OUT"

@@ -1,86 +1,244 @@
-#!/usr/bin/env bash
-VERSION="0.1.2"
+#!/bin/env bash
+VERSION="1.0.0"
+
+## Function to echo to stderr
+function errecho() { echo $* 1>&2 ;}
 
 ## Function that takes an element and a list and returns the contents of that list without the specified element.
 function exclude_element() { idx=$1; shift 1; arr=($*); new_arr=(${arr[@]:0:${idx}} ${arr[@]:((${idx}+1)):${#arr[@]}}); echo ${new_arr[@]}; }
 
+function infer_output_suffix() {
+  local type=$1
+  local all_snps=$2
+  local rotation=$3
+  local outtype=''
+  
+  if [[ ${all_snps} == "FALSE" ]]; then
+      outtype=".NoAllSnps"
+  fi
+  if [[ ${type} == "qpAdm" && ${rotation} == "TRUE" ]]; then
+      outtype+=".rotating"
+  fi
+  echo ${outtype}
+}
+
+function beta_qpWave() {
+  local -n _RIGHTS=$1
+  local -n _LEFTS=$2
+  local _ALL_SNPS=$3
+  local _set_chrom=$4
+  local _dry_run=$5
+  local _isRotating=$6
+  local _debug=$7
+  local _output_suffix=$(infer_output_suffix qpWave ${_ALL_SNPS} ${_isRotating})
+  
+  if [[ ${_debug} == "TRUE" ]]; then
+    ##    DEBUG
+    errecho -e "\nqpWave function"
+    errecho "_LEFTS:     ${_LEFTS[@]}"
+    errecho "_RIGHTS:    ${_RIGHTS[@]}"
+    errecho "_ALLSNPS:   ${_ALL_SNPS}"
+    errecho "_CHROM:     ${_set_chrom}"
+    errecho "_TEST:      ${_dry_run}"
+    errecho "_OUT_TYPE:  ${_output_suffix}"
+    errecho "_dry_run:   ${_dry_run}"
+  fi
+  
+  ## Create temp dir for run
+  TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
+  ## File name for Leftpops
+  POPLEFT=$TEMPDIR/Left
+  ## Create empty file and populate it with all Left pops
+  printf "" >$POPLEFT
+  for POP in ${_LEFTS[@]}; do
+      printf "$POP\n" >>$POPLEFT
+  done
+  
+  ## File name for Rightpops
+  POPRIGHT=$TEMPDIR/Right
+  ## Create empty file and populate it with all Right pops
+  printf "" >$POPRIGHT
+  for REF in ${_RIGHTS[@]}; do
+      printf "$REF\n" >>$POPRIGHT
+  done
+  
+  ## Make the params file
+  PARAMSFILE=$TEMPDIR/Params
+  printf "genotypename:\t$GENO\n" > $PARAMSFILE
+  printf "snpname:\t$SNP\n" >> $PARAMSFILE
+  printf "indivname:\t$IND\n" >> $PARAMSFILE
+  printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
+  printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
+  printf "details:\tYES\n" >>$PARAMSFILE
+  if [[ "$ALLSNPS" != "FALSE" ]]; then
+      printf "allsnps:\tYES\n" >>$PARAMSFILE
+  fi
+  if [[ ${_set_chrom} != "0" ]]; then
+    printf "chrom:\t${_set_chrom}\n" >> $PARAMSFILE
+  fi
+  
+  ## Submit qpWave job to slurm
+  LOG=$OUTDIR2/Logs/$_LEFTS.${_RIGHTS[0]}.${_RIGHTS[1]}${_output_suffix}.$(basename $TEMPDIR).log
+  OUT=$OUTDIR2/$_LEFTS.${_RIGHTS[0]}.${_RIGHTS[1]}${_output_suffix}.$(basename $TEMPDIR).out
+  # echo "OUT: $OUT"
+  # echo "LOG: $LOG"
+  # echo "LEFT: $POPLEFT"
+  # echo "RIGHT: $POPRIGHT"
+  # echo "PARAM: $PARAMSFILE"
+  # echo "${SAMPLE}_$TYPE"
+  if [[ "${_dry_run}" == "TRUE" ]]; then
+      echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG"
+  else
+      qsub -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpWave.${SUBDIR}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
+  fi
+}
+
+function beta_qpAdm() {
+  local _SAMPLE=$1
+  local -n _REFS=$2
+  local -n _SOURCES=$3
+  local _ALL_SNPS=$4
+  local _set_chrom=$5
+  local _dry_run=$6
+  local _rotation=$7
+  local _debug=$8
+  local _output_suffix=$(infer_output_suffix qpAdm ${_ALL_SNPS} ${_rotation})
+  
+  if [[ ${_debug} == "TRUE" ]]; then
+    ##    DEBUG
+    errecho -e "\nqpAdm function"
+    errecho "_SAMPLE:  ${_SAMPLE}"
+    errecho "_SOURCES: ${_SOURCES[@]}"
+    errecho "_REFS:    ${_REFS[@]}"
+    errecho "_ALLSNPS: ${_ALL_SNPS}"
+    errecho "_CHROM:   ${_set_chrom}"
+    errecho "_TEST:    ${_dry_run}"
+    errecho "OUTTYPE:  ${_output_suffix}"
+    errecho "ROTATING: ${_rotation}"
+  fi
+  
+  ## Make a temp directory and populate Left and Right pop lists.
+  TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
+  POPLEFT=$TEMPDIR/Left
+  if [[ "$_SAMPLE" != "" ]]; then
+    printf "$_SAMPLE\n" >$POPLEFT
+  else
+    printf "" >$POPLEFT
+  fi
+  for POP in ${_SOURCES[@]}; do
+    printf "$POP\n" >>$POPLEFT
+  done
+  
+  POPRIGHT=$TEMPDIR/Right
+  printf "" >$POPRIGHT
+  for REF in ${_REFS[@]}; do
+    printf "$REF\n" >>$POPRIGHT
+  done
+
+  ## Make the params file
+  PARAMSFILE=$TEMPDIR/Params
+  printf "genotypename:\t$GENO\n" > $PARAMSFILE
+  printf "snpname:\t$SNP\n" >> $PARAMSFILE
+  printf "indivname:\t$IND\n" >> $PARAMSFILE
+  printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
+  printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
+  printf "details:\tYES\n" >>$PARAMSFILE
+  if [[ "$ALLSNPS" != "FALSE" ]]; then
+    printf "allsnps:\tYES\n" >>$PARAMSFILE
+  fi
+  if [[ ${_set_chrom} != "0" ]]; then
+    printf "chrom:\t${_set_chrom}\n" >> $PARAMSFILE
+  fi
+
+  if [[ "$_SAMPLE" != "" ]]; then
+    LOG=$OUTDIR2/Logs/$_SAMPLE.${_SOURCES}.${_REFS[0]}.${_REFS[1]}${_output_suffix}.$(basename $TEMPDIR).log
+    OUT=$OUTDIR2/$_SAMPLE.${_SOURCES}.${_REFS[0]}.${_REFS[1]}${_output_suffix}.$(basename $TEMPDIR).out
+  else
+    LOG=$OUTDIR2/Logs/${_SOURCES}.${_REFS[0]}.${_REFS[1]}${_output_suffix}.$(basename $TEMPDIR).log
+    OUT=$OUTDIR2/${_SOURCES}.${_REFS[0]}.${_REFS[1]}${_output_suffix}.$(basename $TEMPDIR).out
+  fi
+
+  ## If array submission is specified, print all commands that would be ran into a file. else submit each command as its own job.
+  if [[ "${dry_run}" == "TRUE" ]]; then
+    echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG"
+  # elif [[ ${Submission} == "Array" ]]; then
+  #   echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG" >> ${command_file}
+  ## DEBUG
+  # echo "OUT: $OUT"
+  # echo "LOG: $LOG"
+  # echo "LEFT: $POPLEFT"
+  # echo "RIGHT: $POPRIGHT"
+  # echo "PARAM: $PARAMSFILE"
+  # echo "${_SAMPLE}_$TYPE"
+  else
+    qsub -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpAdm.${_SAMPLE}_${SUBDIR}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
+  fi
+}
+
 ## Parse CLI args.
-TEMP=`getopt -q -o hArvtS:R:L:D:a:c: --long help,rotating,version,test,Sample:,Right:,Ref:,Left:,Source:,SubDir:,array:,chrom: -n 'qpWrapper.sh' -- "$@"`
+TEMP=`getopt -q -o dhAvtS:R:r:L:D:a:c: --long debug,help,version,test,Sample:,Right:,Ref:,rotating:,Left:,Source:,SubDir:,array:,chrom: -n 'qpWrapper.sh' -- "$@"`
 eval set -- "$TEMP"
 
-## Debugging
+## DEBUG
 # echo $TEMP
 
 ## Helptext function
-function Helptext {
-    echo -ne "\t usage: qpWrapper.sh [options] (qpWave|qpAdm)\n\n"
-    echo -ne "This programme will submit multiple qpWave/qpAdm runs, one for each Sample, with the rest of your Left and Right pops constant.\n\n"
-    echo -ne "options:\n"
-    echo -ne "-h, --help\t\tPrint this text and exit.\n"
-    echo -ne "-S, --Sample\t\tName of your sample. Can be provided multiple times.\n"
-    echo -ne "-R, --Ref, --Right\tThe Right populations for your runs. Can be provided multiple times.\n"
-    echo -ne "-L, --Left, --Source\tThe Left Pops of your runs. Your Sample will be the first Left pop, followed by these. Can be provided multiple times.\n"
-    echo -ne "-D, --SubDir\t\tWhen provided, results will be placed in a subdirectory with the name provided within the result directory. Deeper paths can be provided by using '/'.\n"
-    echo -ne "-A, \t\t\tWhen provided, the option 'allsnps: YES' will NOT be provided.\n"
-    echo -ne "-c, --chrom \t\tWhen provided, qpWave/qpAdm will only use snps from the specified chromosome. Chromosome names in eigenstrat format are integers.\n"    
-    echo -ne "-r, --rotating \t\tWhen provided and submitting qpAdm runs, qpWrapper will submit 'rotating' models, where all Sample populations except the one currently tested are added\n\t\t\t\tto the end of the Right poplations.\n"
-    echo -ne "-a, --array \t\tWhen provided, the qpAdm jobs will be submitted in a slurm array instead. The number of jobs to run simultaneously should be provided to this option.\n"
-    echo -ne "-t, --test \t\tUsed to test the commands to be submitted. Instead of submitting them, qpWrapper will simply print them, while still creating the required files. \n\t\t\t\tUseful for troubleshooting and integrating with broader pipelines.\n"
-    echo -ne "-v, --version \t\tPrint qpWrapper version and exit.\n"
+function Helptext() {
+  echo -ne "\t usage: qpWrapper.sh [options] (qpWave|qpAdm)\n\n"
+  echo -ne "This programme will submit multiple qpWave/qpAdm runs, one for each Sample, with the rest of your Left and Right pops constant.\n\n"
+  echo -ne "Options:\n"
+  echo -ne "-h, --help\t\tPrint this text and exit.\n"
+  echo -ne "-S, --Sample\t\tName of your sample. Should correspond to the populations name of your sample in the '.ind' file. Can be provided multiple times.\n"
+  echo -ne "-R, --Ref, --Right\tThe Right populations for your runs. Can be provided multiple times.\n"
+  echo -ne "-L, --Left, --Source\tThe Left populations for your runs. For qpAdm, each Sample will be the first Left pop, followed by these. Can be provided multiple times.\n"
+  echo -ne "-r, --rotating \t\tPopulations to 'rotate' from the Lefts to the Rights. When provided, qpWrapper will submit multiple runs, each with one of the rotating populations\n\t\t\t\tadded to the Lefts while the rest are added to the end of the list of Rights. Can be provided multiple times.\n"
+  echo -ne "-D, --SubDir\t\tWhen provided, results will be placed in a subdirectory with the name provided within the result directory. Deeper paths can be provided by using '/'.\n"
+  echo -ne "-A, \t\t\tWhen provided, the option 'allsnps: YES' will NOT be provided.\n"
+  echo -ne "-c, --chrom \t\tWhen provided, qpWave/qpAdm will only use snps from the specified chromosome. Chromosome names in eigenstrat format are integers.\n"    
+  # echo -ne "-a, --array \t\tWhen provided, the qpAdm jobs will be submitted in a slurm array instead. The number of jobs to run simultaneously should be provided to this option.\n"
+  echo -ne "-t, --test \t\tUsed to test the commands to be submitted. Instead of submitting them, qpWrapper will simply print them, while still creating the required files. \n\t\t\t\tUseful for troubleshooting and integrating with broader pipelines.\n"
+  echo -ne "-v, --version \t\tPrint qpWrapper version and exit.\n"
+  echo -ne "-d, --debug \t\tRun while printing debug information.\n"
 }
-
-if [ $? -ne 0 ]
-then
-    Helptext
-fi
-
-## Submit jobs outside of an array, unless -a/--array is provided with a parameter
-Submission="Jobs"
 
 ## Regex to check that --array option accepts only positive integers.
 re='^[0-9]+$'
 
+## Default parameter values
+TYPE="NONE"
+set_chrom="0"
+ALLSNPS="TRUE"
+dry_run="FALSE"
+
 ## Read in CLI arguments
 while true ; do
-    case "$1" in
-        -S|--Sample) SAMPLES+=("$2"); shift 2;;
-        -R|--Ref|--Right) RIGHTS+=("$2") ; shift 2;;
-        -L|--Left|--Source) LEFTS+=("$2"); shift 2;;
-        -D|--SubDir) SUBDIR="$2"; shift 2;;
-        --) TYPE=$2 ;shift 2; break ;;
-        -h|--help) Helptext; exit 0 ;;
-        -c|--chrom) set_chrom="$2"; shift 2;;
-        -A) ALLSNPS="FALSE"; shift 1;;
-        -r|--rotating) Rotating="TRUE"; shift 1;;
-        -t|--test) dry_run="TRUE"; shift 1;;
-        -v|--version) echo ${VERSION}; exit 0;;
-        ## When --array is specified, check that parameter is an integer, else throw an error.
-        -a|--array)
-          # echo "Option -a/--array specified!"
-          Submission="Array"; 
-          if [[ $2 =~ $re ]]; then 
-            num_simultaneous_jobs="$2" 
-          else 
-            echo "Invalid parameter '$2' specified to --array option"
-            exit 2
-          fi
-          shift 2;;
+  case "$1" in
+    -S|--Sample) SAMPLES+=("$2"); shift 2;;
+    -R|--Ref|--Right) RIGHTS+=("$2") ; shift 2;;
+    -L|--Left|--Source) LEFTS+=("$2"); shift 2;;
+    -r|--rotating) Rotating+=("$2"); shift 2;;
+    -D|--SubDir) SUBDIR="$2"; shift 2;;
+    --) TYPE=$2 ;shift 2; break ;;
+    -h|--help) Helptext; exit 0 ;;
+    -c|--chrom) set_chrom="$2"; shift 2;;
+    -A) ALLSNPS="FALSE"; shift 1;;
+    -t|--test) dry_run="TRUE"; shift 1;;
+    -v|--version) echo ${VERSION}; exit 0;;
+    -d|--debug) debug="TRUE"; shift 1;;
+    ## When --array is specified, check that parameter is an integer, else throw an error.
+    # -a|--array)
+    #   # echo "Option -a/--array specified!"
+    #   Submission="Array";
+    #   if [[ $2 =~ $re ]]; then
+    #     num_simultaneous_jobs="$2"
+    #   else
+    #     echo "Invalid parameter '$2' specified to --array option"
+    #     exit 2
+    #   fi
+    #   shift 2;;
     *) echo -e "invalid option provided.\n"; Helptext; exit 1;;
-    esac
+  esac
 done
-
-## Set output file name based on option selection.
-if [[ "$ALLSNPS" == "FALSE" ]]; then
-    OUTTYPE="$TYPE.NoAllSnps"
-else
-    OUTTYPE=$TYPE
-fi
-
-if [[ "$Rotating" == "TRUE" ]]; then
-    OUTTYPE="$OUTTYPE.rotating"
-else
-    OUTTYPE="$OUTTYPE"
-fi
 
 ## Read in variable assignments from ~/.qpWrapper.config
 source ~/.qpWrapper.config
@@ -90,174 +248,96 @@ OUTDIR2=$OUTDIR/$TYPE/$SUBDIR
 mkdir -p $OUTDIR2/Logs
 mkdir -p $OUTDIR2/.tmp
 
-## Always submit to short queue
-SlurmPart="-p short "
-# if [[ $HOSTNAME == mpi* ]] ; then
-#     SlurmPart="-p short "
-# else
-#     SlurmPart=""
-# fi
-
-unset job_commands
+## Rotating models specified?
+isRotating=$(if [[ ${#Rotating} == 0 ]]; then echo "FALSE"; else echo "TRUE"; fi)
 
 if [[ $TYPE == "qpWave" ]]; then
-    unset SAMPLES
-    SAMPLES+=""
-    ## Make a temp directory and populate Left and Right pop lists.
-    TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
-    POPLEFT=$TEMPDIR/Left
-    printf "" >$POPLEFT
-    for POP in ${LEFTS[@]}; do
-        printf "$POP\n" >>$POPLEFT
+  if [[ ${isRotating} == "TRUE" ]]; then
+    for idx in ${!Rotating[@]}; do
+      ## Rotate selected population to Lefts
+      SOURCES=(${LEFTS[@]} ${Rotating[${idx}]})
+      Rotate_Rights=($(exclude_element ${idx} ${Rotating[@]}))
+      ## Rotate remaining rotating populations to the Rights
+      REFS=(${RIGHTS[@]} ${Rotate_Rights[@]})
+      
+      if [[ ${debug} == "TRUE" ]]; then
+        ##    DEBUG
+        errecho -e "\nOut of function"
+        errecho "SAMPLE:   ${SAMPLE}"
+        errecho "LEFTS:    ${LEFTS[@]}"
+        errecho "RIGHTS:   ${RIGHTS[@]}"
+        errecho "Rotating: ${Rotating[@]}"
+        errecho "ALLSNPS:  ${ALLSNPS}"
+        errecho "CHROM:    ${set_chrom}"
+        errecho "TEST:     ${dry_run}"
+        errecho "REFS:     ${REFS[@]}"
+        errecho "SOURCES:  ${SOURCES[@]}"
+      fi
+      beta_qpWave REFS SOURCES ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug}
     done
+  else
     
-    POPRIGHT=$TEMPDIR/Right
-    printf "" >$POPRIGHT
-    for REF in ${RIGHTS[@]}; do
-        printf "$REF\n" >>$POPRIGHT
-    done
-    
-    ## Make the params file
-    PARAMSFILE=$TEMPDIR/Params
-    printf "genotypename:\t$GENO\n" > $PARAMSFILE
-    printf "snpname:\t$SNP\n" >> $PARAMSFILE
-    printf "indivname:\t$IND\n" >> $PARAMSFILE
-    printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
-    printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
-    printf "details:\tYES\n" >>$PARAMSFILE
-    if [[ "$ALLSNPS" != "FALSE" ]]; then
-        printf "allsnps:\tYES\n" >>$PARAMSFILE
-    fi
-    if [[ ! -z ${set_chrom+x} ]]; then
-      printf "chrom:\t${set_chrom}\n" >> $PARAMSFILE
+    if [[ ${debug} == "TRUE" ]]; then
+      ##    DEBUG
+      errecho -e "\nOut of function"
+      errecho "SAMPLE:  ${SAMPLE}"
+      errecho "LEFTS:   ${LEFTS[@]}"
+      errecho "RIGHTS:  ${RIGHTS[@]}"
+      errecho "ALLSNPS: ${ALLSNPS}"
+      errecho "CHROM:   ${set_chrom}"
+      errecho "TEST:    ${dry_run}"
     fi
     
-    ## Submit qpWave job to slurm
-    LOG=$OUTDIR2/Logs/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
-    OUT=$OUTDIR2/$LEFTS.${RIGHTS[0]}.${RIGHTS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
-    # echo "OUT: $OUT"
-    # echo "LOG: $LOG"
-    # echo "LEFT: $POPLEFT"
-    # echo "RIGHT: $POPRIGHT"
-    # echo "PARAM: $PARAMSFILE"
-    # echo "${SAMPLE}_$TYPE"
-    if [[ "${dry_run}" == "TRUE" ]]; then
-        echo "$TYPE -p $PARAMSFILE >$OUT"
+    beta_qpWave RIGHTS LEFTS ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug}
+  fi
+elif [[ $TYPE == "qpAdm" ]]; then
+  for SAMPLE in ${SAMPLES[@]}; do
+    if [[ ${isRotating} == "TRUE" ]]; then
+      for idx in ${!Rotating[@]}; do
+        ## Rotate selected population to Lefts
+        SOURCES=(${LEFTS[@]} ${Rotating[${idx}]})
+        Rotate_Rights=($(exclude_element ${idx} ${Rotating[@]}))
+        ## Rotate remaining rotating populations to the Rights
+        REFS=(${RIGHTS[@]} ${Rotate_Rights[@]})
+        
+        if [[ ${debug} == "TRUE" ]]; then
+          ##    DEBUG
+          errecho -e "\nOut of function"
+          errecho "SAMPLE:   ${SAMPLE}"
+          errecho "LEFTS:    ${LEFTS[@]}"
+          errecho "RIGHTS:   ${RIGHTS[@]}"
+          errecho "Rotating: ${Rotating[@]}"
+          errecho "ALLSNPS:  ${ALLSNPS}"
+          errecho "CHROM:    ${set_chrom}"
+          errecho "TEST:     ${dry_run}"
+          errecho "REFS:     ${REFS[@]}"
+          errecho "SOURCES:  ${SOURCES[@]}"
+        fi
+        
+        beta_qpAdm ${SAMPLE} REFS SOURCES ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug}
+      done
     else
-        sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
-    fi
-fi
-
-## If submittiing to a alurm array, create a temp dir for the array and the filename to the command file.
-if [[ ${Submission} == "Array" ]]; then
-  array_dir=$(mktemp -d $OUTDIR2/.tmp/array_XXXXXX)
-  command_file="${array_dir}/slurm_commands"
-fi
-
-if [[ $TYPE == "qpAdm" ]]; then
-  for idx in ${!SAMPLES[@]}; do
-    SAMPLE=${SAMPLES[${idx}]} ## SAMPLE is now set by index due to implementation of rotating models.
-    
-    ## If rotating models are requested, create a list of all SAMPLES except the current one and append it to the RIGHTS to make the list of Reference populations.
-    if [[ "$Rotating" == "TRUE" ]]; then
-      Unused_Samples=($(exclude_element ${idx} ${SAMPLES[@]}))
-      REFS=(${RIGHTS[@]} ${Unused_Samples[@]})
-    else
-      REFS=(${RIGHTS[@]})
-    fi
-##    DEBUG
-#     echo "SAMPLE: ${SAMPLE}"
-#     echo "LEFTS:  ${LEFTS[@]}"
-#     echo "RIGHTS: ${RIGHTS[@]}"
-#     echo "REFS:   ${REFS[@]}"
-#     echo ""
-# done
-# exit 0
-    ## Make a temp directory and populate Left and Right pop lists.
-    TEMPDIR=$(mktemp -d $OUTDIR2/.tmp/XXXXXXXX)
-    POPLEFT=$TEMPDIR/Left
-    if [[ "$SAMPLE" != "" ]]; then
-      printf "$SAMPLE\n" >$POPLEFT
-    else
-      printf "" >$POPLEFT
-    fi
-    for POP in ${LEFTS[@]}; do
-      printf "$POP\n" >>$POPLEFT
-    done
-    
-    POPRIGHT=$TEMPDIR/Right
-    printf "" >$POPRIGHT
-    for REF in ${REFS[@]}; do
-      printf "$REF\n" >>$POPRIGHT
-    done
-    
-    ## Make the params file
-    PARAMSFILE=$TEMPDIR/Params
-    printf "genotypename:\t$GENO\n" > $PARAMSFILE
-    printf "snpname:\t$SNP\n" >> $PARAMSFILE
-    printf "indivname:\t$IND\n" >> $PARAMSFILE
-    printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
-    printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
-    printf "details:\tYES\n" >>$PARAMSFILE
-    if [[ "$ALLSNPS" != "FALSE" ]]; then
-      printf "allsnps:\tYES\n" >>$PARAMSFILE
-    fi
-    if [[ ! -z ${set_chrom+x} ]]; then
-      printf "chrom:\t${set_chrom}\n" >> $PARAMSFILE
-    fi
-    
-    if [[ "$SAMPLE" != "" ]]; then
-      LOG=$OUTDIR2/Logs/$SAMPLE.$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
-      OUT=$OUTDIR2/$SAMPLE.$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
-    else
-      LOG=$OUTDIR2/Logs/$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).log
-      OUT=$OUTDIR2/$LEFTS.${REFS[0]}.${REFS[1]}.$OUTTYPE.$(basename $TEMPDIR).out
-    fi
-    if [[ $SAMPLE == "" && $TYPE == "qpAdm" ]]; then
-      continue
-    fi
-    
-    ## If array submission is specified, print all commands that would be ran into a file. esle submit each command as its own job.
-    if [[ "${dry_run}" == "TRUE" ]]; then
-      echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG"
-    elif [[ ${Submission} == "Array" ]]; then
-      echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG" >> ${command_file}
-    ## DEBUG
-    # echo "OUT: $OUT"
-    # echo "LOG: $LOG"
-    # echo "LEFT: $POPLEFT"
-    # echo "RIGHT: $POPRIGHT"
-    # echo "PARAM: $PARAMSFILE"
-    # echo "${SAMPLE}_$TYPE"
-    else
-      sbatch $SlurmPart--job-name="${SAMPLE}_${SUBDIR}_$OUTTYPE" --mem=4000 -o $LOG --wrap="$TYPE -p $PARAMSFILE >$OUT"
+      if [[ ${debug} == "TRUE" ]]; then
+        ##    DEBUG
+        errecho -e "\nOut of function"
+        errecho "SAMPLES:  ${SAMPLES[@]}"
+        errecho "SAMPLE:   ${SAMPLE}"
+        errecho "LEFTS:    ${LEFTS[@]}"
+        errecho "RIGHTS:   ${RIGHTS[@]}"
+        errecho "Rotating: ${Rotating[@]}"
+        errecho "ALLSNPS:  ${ALLSNPS}"
+        errecho "CHROM:    ${set_chrom}"
+        errecho "TEST:     ${dry_run}"
+        errecho "REFS:     ${REFS[@]}"
+        errecho "SOURCES:  ${SOURCES[@]}"
+      fi
+      beta_qpAdm ${SAMPLE} RIGHTS LEFTS ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug}
     fi
   done
-  
-  ## If array submission is specified, submit as an array job.
-  if [[ ${Submission} == "Array" ]]; then
-    # touch ${log_files[@]} ${output_files[@]}
-    max_array_index=$(bc <<< "$(wc -l ${command_file}| cut -f 1 -d ' ') - 1" )
-    sbatch $SlurmPart--job-name="${array_dir#*/}.${SUBDIR}.${OUTTYPE}" \
-      --mem=4GB -c1  -a 0-${max_array_index}%${num_simultaneous_jobs} \
-      --export=command_file=${command_file}\
-      -o "${array_dir}/%A_%a.log" \
-      <<- 'END'
-		#!/usr/bin/env bash
-		while read line; do
-			job_commands+=("${line}")
-			# echo $line
-		done < ${command_file}
-		for i in ${params_files[@]}; do
-			echo $i
-		done
-		current_command="${job_commands[${SLURM_ARRAY_TASK_ID}]}"
-		# echo ${command_file}
-		# echo ''
-		# echo ${job_commands[0]}
-		# echo ''
-		# echo "bash -c ${current_command}"
-		bash -c "${current_command}"
-		END
-  fi
+else
+  ## Throw error if user did not specify what analysis to run, or had a typo
+  errecho "Invalid analysis type selected: '${TYPE}'"
+  errecho -e "\nAcceptable values are: 'qpWave'/'qpAdm'\n"
+  errecho "Execution halted"
+  exit 1
 fi

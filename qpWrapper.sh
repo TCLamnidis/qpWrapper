@@ -1,5 +1,5 @@
 #!/bin/env bash
-VERSION="1.0.0"
+VERSION="1.1.0"
 
 ## Function to echo to stderr
 function errecho() { echo $* 1>&2 ;}
@@ -30,6 +30,7 @@ function beta_qpWave() {
   local _dry_run=$5
   local _isRotating=$6
   local _debug=$7
+  local _inbreed=$8
   local _output_suffix=$(infer_output_suffix qpWave ${_ALL_SNPS} ${_isRotating})
   
   if [[ ${_debug} == "TRUE" ]]; then
@@ -42,6 +43,7 @@ function beta_qpWave() {
     errecho "_TEST:      ${_dry_run}"
     errecho "_OUT_TYPE:  ${_output_suffix}"
     errecho "_dry_run:   ${_dry_run}"
+    errecho "_inbreed:   ${_inbreed}"
   fi
   
   ## Create temp dir for run
@@ -70,8 +72,11 @@ function beta_qpWave() {
   printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
   printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
   printf "details:\tYES\n" >>$PARAMSFILE
-  if [[ "$ALLSNPS" != "FALSE" ]]; then
+  if [[ "${_ALL_SNPS}" != "FALSE" ]]; then
       printf "allsnps:\tYES\n" >>$PARAMSFILE
+  fi 
+  if [[ "${_inbreed}" != "FALSE" ]]; then
+      printf "inbreed:\tYES\n" >>$PARAMSFILE
   fi
   if [[ ${_set_chrom} != "0" ]]; then
     printf "chrom:\t${_set_chrom}\n" >> $PARAMSFILE
@@ -89,7 +94,7 @@ function beta_qpWave() {
   if [[ "${_dry_run}" == "TRUE" ]]; then
       echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG"
   else
-      qsub -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpWave.${SUBDIR}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
+      qsub -V -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpWave.${SUBDIR}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
   fi
 }
 
@@ -102,6 +107,7 @@ function beta_qpAdm() {
   local _dry_run=$6
   local _rotation=$7
   local _debug=$8
+  local _inbreed=$9
   local _output_suffix=$(infer_output_suffix qpAdm ${_ALL_SNPS} ${_rotation})
   
   if [[ ${_debug} == "TRUE" ]]; then
@@ -115,6 +121,7 @@ function beta_qpAdm() {
     errecho "_TEST:    ${_dry_run}"
     errecho "OUTTYPE:  ${_output_suffix}"
     errecho "ROTATING: ${_rotation}"
+    errecho "_inbreed:   ${_inbreed}"
   fi
   
   ## Make a temp directory and populate Left and Right pop lists.
@@ -143,8 +150,11 @@ function beta_qpAdm() {
   printf "popleft:\t$POPLEFT\n" >> $PARAMSFILE
   printf "popright:\t$POPRIGHT\n" >>$PARAMSFILE
   printf "details:\tYES\n" >>$PARAMSFILE
-  if [[ "$ALLSNPS" != "FALSE" ]]; then
+  if [[ "${_ALL_SNPS}" != "FALSE" ]]; then
     printf "allsnps:\tYES\n" >>$PARAMSFILE
+  fi
+  if [[ "${_inbreed}" != "FALSE" ]]; then
+    printf "inbreed:\tYES\n" >>$PARAMSFILE
   fi
   if [[ ${_set_chrom} != "0" ]]; then
     printf "chrom:\t${_set_chrom}\n" >> $PARAMSFILE
@@ -171,12 +181,12 @@ function beta_qpAdm() {
   # echo "PARAM: $PARAMSFILE"
   # echo "${_SAMPLE}_$TYPE"
   else
-    qsub -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpAdm.${_SAMPLE}_${SUBDIR}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
+    qsub -V -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpAdm.${_SAMPLE}_${SUBDIR}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
   fi
 }
 
 ## Parse CLI args.
-TEMP=`getopt -q -o dhAvtS:R:r:L:D:a:c: --long debug,help,version,test,Sample:,Right:,Ref:,rotating:,Left:,Source:,SubDir:,array:,chrom: -n 'qpWrapper.sh' -- "$@"`
+TEMP=`getopt -q -o dhAivtS:R:r:L:D:a:c: --long debug,help,version,test,Sample:,Right:,Ref:,rotating:,Left:,Source:,SubDir:,array:,chrom: -n 'qpWrapper.sh' -- "$@"`
 eval set -- "$TEMP"
 
 ## DEBUG
@@ -194,6 +204,7 @@ function Helptext() {
   echo -ne "-r, --rotating \t\tPopulations to 'rotate' from the Lefts to the Rights. When provided, qpWrapper will submit multiple runs, each with one of the rotating populations\n\t\t\t\tadded to the Lefts while the rest are added to the end of the list of Rights. Can be provided multiple times.\n"
   echo -ne "-D, --SubDir\t\tWhen provided, results will be placed in a subdirectory with the name provided within the result directory. Deeper paths can be provided by using '/'.\n"
   echo -ne "-A, \t\t\tWhen provided, the option 'allsnps: YES' will NOT be provided.\n"
+  echo -ne "-i, \t\t\tWhen provided, the option 'inbreed: YES' will NOT be provided.\n"
   echo -ne "-c, --chrom \t\tWhen provided, qpWave/qpAdm will only use snps from the specified chromosome. Chromosome names in eigenstrat format are integers.\n"    
   # echo -ne "-a, --array \t\tWhen provided, the qpAdm jobs will be submitted in a slurm array instead. The number of jobs to run simultaneously should be provided to this option.\n"
   echo -ne "-t, --test \t\tUsed to test the commands to be submitted. Instead of submitting them, qpWrapper will simply print them, while still creating the required files. \n\t\t\t\tUseful for troubleshooting and integrating with broader pipelines.\n"
@@ -209,6 +220,7 @@ TYPE="NONE"
 set_chrom="0"
 ALLSNPS="TRUE"
 dry_run="FALSE"
+inbreed="TRUE"
 
 ## Read in CLI arguments
 while true ; do
@@ -222,6 +234,7 @@ while true ; do
     -h|--help) Helptext; exit 0 ;;
     -c|--chrom) set_chrom="$2"; shift 2;;
     -A) ALLSNPS="FALSE"; shift 1;;
+    -i) inbreed="FALSE"; shift 1;;
     -t|--test) dry_run="TRUE"; shift 1;;
     -v|--version) echo ${VERSION}; exit 0;;
     -d|--debug) debug="TRUE"; shift 1;;
@@ -273,7 +286,7 @@ if [[ $TYPE == "qpWave" ]]; then
         errecho "REFS:     ${REFS[@]}"
         errecho "SOURCES:  ${SOURCES[@]}"
       fi
-      beta_qpWave REFS SOURCES ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug}
+      beta_qpWave REFS SOURCES ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug} ${inbreed}
     done
   else
     
@@ -286,9 +299,10 @@ if [[ $TYPE == "qpWave" ]]; then
       errecho "ALLSNPS: ${ALLSNPS}"
       errecho "CHROM:   ${set_chrom}"
       errecho "TEST:    ${dry_run}"
+      errecho "INBREED: ${inbreed}"
     fi
     
-    beta_qpWave RIGHTS LEFTS ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug}
+    beta_qpWave RIGHTS LEFTS ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug} ${inbreed}
   fi
 elif [[ $TYPE == "qpAdm" ]]; then
   for SAMPLE in ${SAMPLES[@]}; do
@@ -312,9 +326,10 @@ elif [[ $TYPE == "qpAdm" ]]; then
           errecho "TEST:     ${dry_run}"
           errecho "REFS:     ${REFS[@]}"
           errecho "SOURCES:  ${SOURCES[@]}"
+          errecho "INBREED: ${inbreed}"
         fi
         
-        beta_qpAdm ${SAMPLE} REFS SOURCES ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug}
+        beta_qpAdm ${SAMPLE} REFS SOURCES ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug} ${inbreed}
       done
     else
       if [[ ${debug} == "TRUE" ]]; then
@@ -330,8 +345,9 @@ elif [[ $TYPE == "qpAdm" ]]; then
         errecho "TEST:     ${dry_run}"
         errecho "REFS:     ${REFS[@]}"
         errecho "SOURCES:  ${SOURCES[@]}"
+        errecho "INBREED: ${inbreed}"
       fi
-      beta_qpAdm ${SAMPLE} RIGHTS LEFTS ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug}
+      beta_qpAdm ${SAMPLE} RIGHTS LEFTS ${ALLSNPS} ${set_chrom} ${dry_run} ${isRotating} ${debug} ${inbreed}
     fi
   done
 else

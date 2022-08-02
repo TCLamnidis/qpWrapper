@@ -221,6 +221,7 @@ set_chrom="0"
 ALLSNPS="TRUE"
 dry_run="FALSE"
 inbreed="TRUE"
+debug="FALSE"
 
 ## Read in CLI arguments
 while true ; do

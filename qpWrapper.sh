@@ -1,5 +1,5 @@
 #!/bin/env bash
-VERSION="1.1.0"
+VERSION="1.1.1"
 
 ## Function to echo to stderr
 function errecho() { echo $* 1>&2 ;}
@@ -77,6 +77,8 @@ function beta_qpWave() {
   fi 
   if [[ "${_inbreed}" != "FALSE" ]]; then
       printf "inbreed:\tYES\n" >>$PARAMSFILE
+  else
+      printf "inbreed:\tNO\n" >>$PARAMSFILE
   fi
   if [[ ${_set_chrom} != "0" ]]; then
     printf "chrom:\t${_set_chrom}\n" >> $PARAMSFILE
@@ -155,6 +157,8 @@ function beta_qpAdm() {
   fi
   if [[ "${_inbreed}" != "FALSE" ]]; then
     printf "inbreed:\tYES\n" >>$PARAMSFILE
+  else
+      printf "inbreed:\tNO\n" >>$PARAMSFILE
   fi
   if [[ ${_set_chrom} != "0" ]]; then
     printf "chrom:\t${_set_chrom}\n" >> $PARAMSFILE

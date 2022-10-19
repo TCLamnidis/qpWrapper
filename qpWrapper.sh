@@ -185,7 +185,7 @@ function beta_qpAdm() {
   # echo "PARAM: $PARAMSFILE"
   # echo "${_SAMPLE}_$TYPE"
   else
-    qsub -V -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpAdm.${_SAMPLE}_${SUBDIR//\//-}}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
+    qsub -V -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpAdm.${_SAMPLE}_${SUBDIR//\//-}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
   fi
 }
 

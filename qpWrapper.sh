@@ -1,5 +1,5 @@
 #!/bin/env bash
-VERSION="1.1.1"
+VERSION="1.1.2"
 
 ## Function to echo to stderr
 function errecho() { echo $* 1>&2 ;}
@@ -96,7 +96,7 @@ function beta_qpWave() {
   if [[ "${_dry_run}" == "TRUE" ]]; then
       echo "$TYPE -p $PARAMSFILE >$OUT 2>$LOG"
   else
-      qsub -V -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpWave.${SUBDIR}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
+      qsub -V -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpWave.${SUBDIR//\//-}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
   fi
 }
 
@@ -185,7 +185,7 @@ function beta_qpAdm() {
   # echo "PARAM: $PARAMSFILE"
   # echo "${_SAMPLE}_$TYPE"
   else
-    qsub -V -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpAdm.${_SAMPLE}_${SUBDIR}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
+    qsub -V -b y -cwd -pe smp 1 -l h_vmem=4G -j y -o $LOG -N "qpAdm.${_SAMPLE}_${SUBDIR//\//-}}${_output_suffix}" "$TYPE -p $PARAMSFILE >$OUT"
   fi
 }
 

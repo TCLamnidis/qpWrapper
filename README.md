@@ -115,7 +115,7 @@ options:
 These can be specified with `-t`, or inferred from the directory path if not specified. 
 
 #### qpWave
-In qpWave parsing, qpParser.sh will print a table of results from qpWave outputs in the current directory.
+In qpWave parsing, qpParser.sh will print a table of results from qpWave outputs (`*.out`) in the current directory.
 This table includes the subdirectory specified during the qpWrapper submission of runs (assuming qpWrapper was used),
 comma separated lists of the Right and Left populations of the qpWave run, as well as the tail-difference between the model with maximum
 rank and that with rank one below it. 
@@ -133,8 +133,8 @@ Subdir	Right1,Right2,Right3,Right4,Right5,Right6,Right7,Right8	Left1,Left2,Left3
 ```
 
 #### qpAdm
-In qpAdm parsing, qpParser.sh will print a table of results from qpAdm outputs in the current directory.
-this table includes the Sample population of the run (i.e. 1st Left), the subdirectory of the run,
+In qpAdm parsing, qpParser.sh will print a table of results from qpAdm outputs (`*.out`) in the current directory.
+This table includes the Sample population of the run (i.e. 1st Left), the subdirectory of the run,
 a comma separated list of the Left populations of the run, the p value of the full model, the inferred mixture proportion
 from all source populations, and the error associated with those proportions, followed by the model code and pvalue of each
 of the "best models" provided by qpAdm.
@@ -150,7 +150,24 @@ Sample3	Right1,Right2,Right3,Right4,Right5,Right6,Right7,Right8	Left1,Left2,Left
 ```
 
 #### qpGraph
-Work in progress
+In qpGraph parsing, qpParser.sh will print a table of results from qpGraph outputs (`*.log`) in the current directory.
+This table includes the name of the output file, the Likelihood score of the model, the degrees of freedom of the model, the
+p-value of the model, the Z score of the worst f4difference between the real and modelled data, and the number of outlier
+statistics in the model.
+
+A cutoff for the Z score of the f4 difference can be provided with `-c`. When provided qpParser will not print out any information
+on models where the worst f4difference exceeds the specified cutoff.
+
+Additionally, providing the `--header` option in this mode will add a simple header to the output table.
+
+Example output with header (`--header`):
+```
+Logfile	Score	dof	p-value	worst f4diff	num outliers
+base_graph.2way.1000.log	30.740	54	0.995471	-4.106	44
+base_graph.2way.1001.log	30.917	54	0.995129	-3.904	35
+base_graph.2way.1002.log	31.140	54	0.994670	3.877	36
+base_graph.2way.1003.log	30.928	54	0.995107	-3.904	44
+```
 
 ## graph_writer.py
 A python script to create graphs, or add specified populations to existing ones. The output of this script can be used as the graph input for qpGraph (`-g`).

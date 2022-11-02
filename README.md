@@ -149,14 +149,57 @@ Sample3	Right1,Right2,Right3,Right4,Right5,Right6,Right7,Right8	Left1,Left2,Left
 
 ```
 
-#### qpWave
+#### qpGraph
 Work in progress
 
 ## graph_writer.py
-Work in progress
+A python script to create graphs, or add specified populations to existing ones. The output of this script can be used as the graph input for qpGraph (`-g`).
 
+### Usage
+```
+    ## Description of flags
+    ##   --help:          Print this helptext and exit.
+    ##   --in:            A prefix for the input scaffold graph
+    ##   --at:            specify edge to add a branch in; otherwise, generate all possible cases
+    ##   --pop:           Name of a population to be added
+    ##   --include_root:  additionally explore two edges directly coming out of the root
+    ##   --3way:          write down all graphs for three-way admixtue scenario
+    ##   --outDir:        The directory to put the output graphs in.
+    ##   --1way:          Only output 1 way models.
+    ##   --version:       Print graph_writer version and exit.
+```
+The `--in` option can be used to specify an input graph prefix (file must end in `.graph`) to add the population specified with `--pop` to. If this option is not
+used, two populations can be specified as a comma separated list to `--pop` to create a base graph for those two populations.
+When `--in` is omitted, the output graph is written to stdout.
+
+The `--at` option can be used to specify the edge or branch to add the specified population on. When omitted, all possible
+topologies where the specified population is added as a simple edge or as a two-way admixture will be created. By default, edges
+coming from the root of the tree are not tested. This behaviour can be reversed by specifying `--include_root`.
+
+When the `--3way` option is specified, all possible topologies where `--pop` is the result of a 3 way mixture will also be created.
+Conversely, by specifying the `--1way` option, it is possible to only create graphs where the specified population is NOT the
+result of an admixture event.
+
+Finally, it is possible to specify the desired output directory, within which all output graphs should be created by using the `--outDir` option.
+
+Example command:
+```
+graph_writer.py --pop=test1,test2 --outDir=test >test/base.graph                    ## Creates a 2 population base graph
+graph_writer.py --in=test/base --pop=test3 --1way --outDir=./test --include_root    ## Places test3 to the base graph, creating two graphs in the process.
+```
 ## qpGraph_dot_cleanup.py
-Work in progress
+A python script that takes the output `.dot` file from a qpGraph run and makes it prettier by removing the label from nodes that
+are not named and changing their shape from bubbles to dots.
+
+Example command:
+```
+qpGraph_dot_cleanup.py --in=my_final_graph.dot
+```
+This command will create a file called `my_final_graph.cleaned.dot` that can be used for plotting the final qpGraph with `dot -Tps`.
+
+Providing the option `--out` allows the user to specify the desired output file name.
+
+It is possible to change the title of the graph with the `--label` option. In default qpGraph output, this title is the name of the parameter file used for the run, followed by the most divergent F4 statistic between real and fitted data.
 
 ## slurm_qpWrapper.sh
 An older version of qpWrapper.sh that worked with SLURM instead of SGE. Not in development anymore, but kept here for backwards

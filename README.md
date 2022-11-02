@@ -155,7 +155,7 @@ This table includes the name of the output file, the Likelihood score of the mod
 p-value of the model, the Z score of the worst f4difference between the real and modelled data, and the number of outlier
 statistics in the model.
 
-A cutoff for the Z score of the f4 difference can be provided with `-c`. When provided qpParser will not print out any information
+A cutoff for the absolute Z score of the f4 difference can be provided with `-c`. When provided qpParser will not print out any information
 on models where the worst f4difference exceeds the specified cutoff.
 
 Additionally, providing the `--header` option in this mode will add a simple header to the output table.

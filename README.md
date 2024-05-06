@@ -17,10 +17,17 @@ IND=$INDIR/INPUT.ind
 This file should be formatted as a valid `bash` script. Lines of this file can be commented out as needed to keep notes or make quick swaps between input files/datasets
 On runtime, qpWrapper.sh will `source ~/.qpWrapper.config` to get access to variables `OUTDIR`, `GENO`, `SNP` and `IND`. 
 
+> [!TIP]
+> It is strongly recommended to use an input dataset in the `PACKEDANCESTRYMAP` format.
+> Using input data in any other accepted format will considerably increase the runtime of your qpWave/qpAdm/qpGraph jobs!
+> 
+> You can convert `EIGENSTRAT` and `PLINK` format data into `PACKEDANCESTRYMAP` using [convertf](https://github.com/DReichLab/EIG/tree/master/CONVERTF).
+
 The `OUTDIR` variable specifies the base output directory for qpWrapper.sh runs. Two subdirectories will be created within this directory,
 named `qpWave` and `qpAdm`, that contain the auxilliary files and outputs of qpWave and qpAdm runs respectively. 
 
 ### Usage
+
 A script to quickly create all necessary auxilliary files and submit qpWave/qpAdm jobs to a queue using `qsub`. Basic usage instructions are as follows:
 ```
 	 usage: qpWrapper.sh [options] (qpWave|qpAdm)
